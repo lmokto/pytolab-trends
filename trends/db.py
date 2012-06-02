@@ -74,6 +74,7 @@ class Db(object):
         user = self.config.get('mysql', 'user')
         password = self.config.get('mysql', 'password')
         db = self.config.get('mysql', 'db')
+        host = 'localhost'
         try:
             self.db_disk_posts = MySQLdb.connect(
                 user=user, passwd=password, db=db,
@@ -94,7 +95,8 @@ class Db(object):
             dbr = self.db_mem
         else:
             dbr = self.db_mem_posts
-        while retry < cmd_retries:
+        retry = 0
+        while retry < self.cmd_retries:
             try:
                 return getattr(dbr, cmd)(args)
             except redis.exceptions.ConnectionError:
@@ -113,7 +115,8 @@ class Db(object):
         raise exceptions.DbError()
 
     def mysql_cmd(self, cmd, sql, writer, *args):
-        while True:
+        retry = 0
+        while retry < self.cmd_retries:
             try:
                 getattr(self.db_cursor, cmd)(sql, args)
                 if writer:
@@ -124,9 +127,12 @@ class Db(object):
                 self.log.error('MySQL cmd %s DB error', cmd)
                 # reconnect
                 self.setup_mysql_loop()
+                retry = 0
             except MySQLdb.Error:
                 self.log.error('MySQL cmd %s sql %s failed', cmd, sql)
-                raise exceptions.DbError()
+                retry += 1
+                if retry <= self.cmd_retries:
+                    time.sleep(self.cmd_retry_wait)
             except AttributeError:
                 self.log.error('MySQL cmd %s does not exist', cmd)
                 raise exceptions.DbError()
