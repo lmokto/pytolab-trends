@@ -1,3 +1,4 @@
+import json
 import logging
 import time
 
@@ -14,6 +15,7 @@ class Db(object):
     db_mem = None
     db_mem_posts = None
     db_disk_posts = None
+    db_cursor = None
     retries = 360
     retry_wait = 10 
     cmd_retries = 3
@@ -85,10 +87,10 @@ class Db(object):
             raise exceptions.DbError()
 
     def redis_cmd(self, cmd, *args):
-        redis_command(0, cmd, args)
+        self.redis_command(0, cmd, args)
 
     def redis_cmd_db_1(self, cmd, *args):
-        redis_command(1, cmd, args)
+        self.redis_command(1, cmd, args)
 
     def redis_command(self, db, cmd, *args):
         if db == 0:
@@ -114,13 +116,14 @@ class Db(object):
                 raise exceptions.DbError()
         raise exceptions.DbError()
 
-    def mysql_cmd(self, cmd, sql, writer, *args):
+    def mysql_command(self, cmd, sql, writer, *args):
         retry = 0
         while retry < self.cmd_retries:
             try:
-                getattr(self.db_cursor, cmd)(sql, args)
+                r = getattr(self.db_cursor, cmd)(sql, args)
                 if writer:
                     self.db_disk_posts.commit()
+                    return r
                 else:
                     return self.db_cursor.fetchall() 
             except (MySQLdb.OperationalError, MySQLdb.InternalError):
@@ -142,7 +145,6 @@ class Db(object):
         """
         Get list of persons from db
         """
-        key = 'persons'
         names = self.redis_cmd('lrange', 'persons', 0, -1)
         persons = []
         for n in names:

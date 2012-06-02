@@ -1,4 +1,6 @@
 import logging
+import os
+import tempfile
 import time
 import unittest2 as unittest
 
@@ -120,9 +122,7 @@ class DbTest(unittest.TestCase):
     @patch.object(db.Db, 'db_mem')
     def test_redis_command_connection_error(self, db_mem_mock,
             setup_redis_loop_mock):
-        mock = Mock()
-        mock.side_effect = redis.exceptions.ConnectionError()
-        db_mem_mock.get = mock
+        db_mem_mock.get.side_effect = redis.exceptions.ConnectionError()
         setup_redis_loop_mock.side_effect = exceptions.DbError()
         self.assertRaises(exceptions.DbError,
             self.db.redis_command,
@@ -134,9 +134,7 @@ class DbTest(unittest.TestCase):
     def test_redis_command_redis_error(self, db_mem_mock):
         self.db.cmd_retries = 2
         self.db.cmd_retry_wait = 0.1
-        mock = Mock()
-        mock.side_effect = redis.exceptions.RedisError()
-        db_mem_mock.get = mock
+        db_mem_mock.get.side_effect = redis.exceptions.RedisError()
         self.assertRaises(exceptions.DbError,
             self.db.redis_command,
             0, 'get', 'test_key')
@@ -145,13 +143,107 @@ class DbTest(unittest.TestCase):
 
     @patch.object(db.Db, 'db_mem')
     def test_redis_command_attribute_error(self, db_mem_mock):
-        mock = Mock()
-        mock.side_effect = AttributeError()
-        db_mem_mock.get = mock
+        db_mem_mock.get.side_effect = AttributeError()
         self.assertRaises(exceptions.DbError,
             self.db.redis_command,
             0, 'get', 'test_key')
         db_mem_mock.get.assert_called_once_with(('test_key',))
-      
+    
+    @patch.object(db.Db, 'db_disk_posts')
+    @patch.object(db.Db, 'db_cursor')
+    def test_mysql_command(self, db_cursor_mock, db_disk_posts_mock):
+        db_cursor_mock.fetchall.return_value = ((1,2,3))
+        r = self.db.mysql_command('execute', 'test_sql', False, 'test_arg')
+        db_cursor_mock.execute.assert_called_once_with(
+            'test_sql', ('test_arg',))
+        self.assertTrue(db_cursor_mock.fetchall.called)
+        self.assertFalse(db_disk_posts_mock.commit.called)
+        self.assertEqual(r, ((1,2,3)))
+
+    @patch.object(db.Db, 'db_disk_posts')
+    @patch.object(db.Db, 'db_cursor')
+    def test_mysql_command_writer(self, db_cursor_mock, db_disk_posts_mock):
+        db_cursor_mock.execute.return_value = 2
+        r = self.db.mysql_command('execute', 'test_sql', True, 'test_arg')
+        db_cursor_mock.execute.assert_called_once_with(
+            'test_sql', ('test_arg',))
+        self.assertTrue(db_disk_posts_mock.commit.called)
+        self.assertEqual(r, 2)
+
+    @patch.object(db.Db, 'setup_mysql_loop')
+    @patch.object(db.Db, 'db_cursor')
+    def test_mysql_command_operational_error(self, db_cursor_mock,
+            setup_mysql_loop_mock):
+        db_cursor_mock.execute.side_effect = MySQLdb.OperationalError()
+        setup_mysql_loop_mock.side_effect = exceptions.DbError()
+        self.assertRaises(exceptions.DbError,
+            self.db.mysql_command,
+            'execute', 'test_sql', True, 'test_arg')
+        db_cursor_mock.execute.assert_called_once_with(
+            'test_sql', ('test_arg',))
+
+    @patch.object(db.Db, 'setup_mysql_loop')
+    @patch.object(db.Db, 'db_cursor')
+    def test_mysql_command_internal_error(self, db_cursor_mock,
+            setup_mysql_loop_mock):
+        db_cursor_mock.execute.side_effect = MySQLdb.InternalError()
+        setup_mysql_loop_mock.side_effect = exceptions.DbError()
+        self.assertRaises(exceptions.DbError,
+            self.db.mysql_command,
+            'execute', 'test_sql', True, 'test_arg')
+        db_cursor_mock.execute.assert_called_once_with(
+            'test_sql', ('test_arg',))
+
+    @patch.object(db.Db, 'db_cursor')
+    def test_mysql_command_internal_error(self, db_cursor_mock):
+        self.db.cmd_retries = 2
+        self.db.cmd_retry_wait = 0.1
+        db_cursor_mock.execute.side_effect = MySQLdb.Error()
+        self.assertRaises(exceptions.DbError,
+            self.db.mysql_command,
+            'execute', 'test_sql', True, 'test_arg')
+        db_cursor_mock.execute.assert_called_with(
+            'test_sql', ('test_arg',))
+        self.assertEqual(db_cursor_mock.execute.call_count, 2)
+
+    @patch.object(db.Db, 'db_cursor')
+    def test_mysql_command_attribute_error(self, db_cursor_mock):
+        db_cursor_mock.execute.side_effect = AttributeError()
+        self.assertRaises(exceptions.DbError,
+            self.db.mysql_command,
+            'execute', 'test_sql', True, 'test_arg')
+        db_cursor_mock.execute.assert_called_with(
+            'test_sql', ('test_arg',))
+
+    @patch.object(db.Db, 'redis_cmd')
+    def test_get_persons(self, redis_cmd_mock):
+        data = (('1:test_first_name_1:test_name_1:test_nickname_1:2:'\
+                 '[\"test_word_1\", \"test_word_2\"]'), 
+                ('3:test_first_name_2:test_name_2:test_nickname_2:4:'\
+                 '[\"test_word_3\", \"test_word_4\"]'))
+        redis_cmd_mock.return_value = data
+        r = self.db.get_persons()
+        self.assertDictEqual(r[0],
+            {'id': 1, 'first_name': 'test_first_name_1', 'name': 'test_name_1',
+             'nickname': 'test_nickname_1', 'group': 2, 'rel': {},
+             'posts_count': 0,
+             'words': ['test_word_1', 'test_word_2']})
+        self.assertDictEqual(r[1],
+            {'id': 3, 'first_name': 'test_first_name_2', 'name': 'test_name_2',
+             'nickname': 'test_nickname_2', 'group': 4, 'rel': {},
+             'posts_count': 0,
+             'words': ['test_word_3', 'test_word_4']})
+        redis_cmd_mock.assert_called_once_with('lrange', 'persons', 0, -1)
+    
+    @patch.object(db.Db, 'redis_cmd')
+    def test_set_persons(self, redis_cmd_mock):
+        with open('names.txt', 'w') as f:
+            f.write('test_name_1\ntest_name_2\n')
+        self.db.set_persons()
+        self.assertEqual(redis_cmd_mock.call_args_list,
+            [call('delete', 'persons'), call('rpush', 'persons', 'test_name_1'),
+             call('rpush', 'persons', 'test_name_2')]) 
+        os.remove('names.txt')
+         
 if __name__ == '__main__':
     unittest.main()
