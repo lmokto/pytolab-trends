@@ -1,10 +1,12 @@
 import logging
+import time
 
 import redis
 import redis.exceptions
 import MySQLdb
 
 import config
+import exceptions
 import log
 
 class Db(object):
@@ -14,6 +16,8 @@ class Db(object):
     db_disk_posts = None
     retries = 360
     retry_wait = 10 
+    cmd_retries = 3
+    cmd_retry_wait = 10 
     
     def __init__(self):
         c = config.Config()
@@ -21,23 +25,24 @@ class Db(object):
         self.log = logging.getLogger('db')
         
     def setup_redis_loop(self):
-        """Setup connection to Redis until it succeeds"""
+        """Setup connection to Redis with retries."""
         retry = 0
-        while True:
+        while retry < self.retries:
             try:
                 self.setup_redis()
-            except exception.DbError:
-                retry += 1
-                if retry <= self.retries:
+                return
+            except exceptions.DbError:
+                if retry < self.retries:
                     time.sleep(self.retry_wait)
-                else:
-                    break
-            break
+                retry += 1
+        self.log.error(
+            '%d retries to connect to Redis failed', self.retries)
+        raise exceptions.DbError()
     
     def setup_redis(self):
-        # connections to Redis
-        host = self.config.get('redis', 'host'),
-        port = self.config.getint('redis', 'port'),
+        """Connections to Redis."""
+        host = self.config.get('redis', 'host')
+        port = self.config.getint('redis', 'port')
         try:
             self.db_mem = redis.Redis(host=host, port=port, db=0)
             self.db_mem_posts = redis.Redis(
@@ -51,13 +56,18 @@ class Db(object):
     
     def setup_mysql_loop(self):
         """Setup connection to Redis until it succeeds"""
-        while True:
+        retry = 0
+        while retry < self.retries:
             try:
                 self.setup_mysql()
+                return
             except exceptions.DbError:
-                time.sleep(10)
-                continue
-            break
+                if retry < self.retries:
+                    time.sleep(self.retry_wait)
+                retry += 1
+        self.log.error(
+            '%d retries to connect to MySQL failed', self.retries)
+        raise exceptions.DbError()
 
     def setup_mysql(self):
         # connections to MySQL
@@ -84,19 +94,23 @@ class Db(object):
             dbr = self.db_mem
         else:
             dbr = self.db_mem_posts
-        while True:
+        while retry < cmd_retries:
             try:
                 return getattr(dbr, cmd)(args)
             except redis.exceptions.ConnectionError:
                 self.log.error('Redis cmd %s connection error', cmd)
                 # reconnect
                 self.setup_redis_loop()
+                retry = 0
+            except redis.exceptions.RedisError:
+                self.log.error('Redis cmd %s error', cmd)
+                retry += 1
+                if retry <= self.cmd_retries:
+                    time.sleep(self.cmd_retry_wait)
             except AttributeError:
                 self.log.error('Redis cmd %s does not exist', cmd)
-                break
-            except Exception:
-                self.log.exception('Redis cmd %s failed', cmd)
-                break
+                raise exceptions.DbError()
+        raise exceptions.DbError()
 
     def mysql_cmd(self, cmd, sql, writer, *args):
         while True:
@@ -112,13 +126,11 @@ class Db(object):
                 self.setup_mysql_loop()
             except MySQLdb.Error:
                 self.log.error('MySQL cmd %s sql %s failed', cmd, sql)
-                break
+                raise exceptions.DbError()
             except AttributeError:
                 self.log.error('MySQL cmd %s does not exist', cmd)
-                break
-            except Exception:
-                self.log.exception('MySQL cmd %s sql %s failed', cmd, sql)
-                break
+                raise exceptions.DbError()
+        raise exceptions.DbError()
 
     def get_persons(self):
         """

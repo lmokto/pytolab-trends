@@ -9,5 +9,5 @@ class Config(object):
     def read_config(self):
         """Return config object from config file"""
         self.cfg = ConfigParser.ConfigParser()
-        self.cfg.read('nt.cfg')
+        self.cfg.read('trends.cfg')
 

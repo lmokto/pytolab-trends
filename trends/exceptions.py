@@ -3,4 +3,3 @@ class NamesTrendsError(Exception):
 
 class DbError(NamesTrendsError):
     pass
-
