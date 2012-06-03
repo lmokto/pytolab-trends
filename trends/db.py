@@ -25,7 +25,11 @@ class Db(object):
         c = config.Config()
         self.config = c.cfg
         self.log = logging.getLogger('db')
-        
+    
+    def setup(self):
+        self.setup_redis_loop()
+        self.setup_mysql_loop()
+         
     def setup_redis_loop(self):
         """Setup connection to Redis with retries."""
         retry = 0
@@ -87,10 +91,10 @@ class Db(object):
             raise exceptions.DbError()
 
     def redis_cmd(self, cmd, *args):
-        self.redis_command(0, cmd, args)
+        return self.redis_command(0, cmd, args)
 
     def redis_cmd_db_1(self, cmd, *args):
-        self.redis_command(1, cmd, args)
+        return self.redis_command(1, cmd, args)
 
     def redis_command(self, db, cmd, *args):
         if db == 0:
@@ -115,6 +119,18 @@ class Db(object):
                 self.log.error('Redis cmd %s does not exist', cmd)
                 raise exceptions.DbError()
         raise exceptions.DbError()
+
+    def get(*args):
+        return self.redis_cmd('get', args)
+
+    def set(*args):
+        return self.redis_cmd('set', args)
+
+    def delete(*args):
+        return self.redis_cmd('delete', args)
+
+    def exists(*args):
+        return self.redis_cmd('exists', args)
 
     def mysql_command(self, cmd, sql, writer, *args):
         retry = 0

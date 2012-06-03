@@ -1,5 +1,8 @@
-class NamesTrendsError(Exception):
+class TrendsError(Exception):
     pass
 
-class DbError(NamesTrendsError):
+class DbError(TrendsError):
+    pass
+
+class MQError(TrendsError):
     pass
