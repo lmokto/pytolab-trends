@@ -17,6 +17,7 @@ class DbTest(unittest.TestCase):
 
     def setUp(self):
         self.db = db.Db()
+        self.cfg_mysql_host = 'test_mysql_host'
         self.cfg_mysql_user = 'test_mysql_user'
         self.cfg_mysql_password = 'test_mysql_password'
         self.cfg_mysql_db = 'test_mysql_db'
@@ -76,7 +77,8 @@ class DbTest(unittest.TestCase):
         cursor = 'test_cursor'
         mock.cursor.return_value = cursor
         self.db.setup_mysql()
-        connect_mock.assert_called_once_with(passwd=self.cfg_mysql_password,
+        connect_mock.assert_called_once_with(host=self.cfg_mysql_host,
+            passwd=self.cfg_mysql_password,
             charset='utf8', db=self.cfg_mysql_db, user=self.cfg_mysql_user,
             use_unicode=True)
         self.assertTrue(mock.cursor.called)

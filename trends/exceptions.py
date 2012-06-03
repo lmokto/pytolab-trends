@@ -6,3 +6,6 @@ class DbError(TrendsError):
 
 class MQError(TrendsError):
     pass
+
+class DataError(TrendsError):
+    pass

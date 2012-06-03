@@ -80,9 +80,9 @@ class Db(object):
         user = self.config.get('mysql', 'user')
         password = self.config.get('mysql', 'password')
         db = self.config.get('mysql', 'db')
-        host = 'localhost'
+        host = self.config.get('mysql', 'host')
         try:
-            self.db_disk_posts = MySQLdb.connect(
+            self.db_disk_posts = MySQLdb.connect(host=host,
                 user=user, passwd=password, db=db,
                 use_unicode=True, charset='utf8')
             self.db_cursor = self.db_disk_posts.cursor()
