@@ -44,32 +44,6 @@ class DbTest(unittest.TestCase):
         self.assertIs(self.db.db_mem, redis_instance)
         self.assertIs(self.db.db_mem_posts, redis_instance)
 
-    @patch('redis.Redis')
-    def test_setup_redis_authentication_error(self, redis_class_mock):
-        redis_class_mock.side_effect = redis.exceptions.AuthenticationError() 
-        self.assertRaises(exceptions.DbError, self.db.setup_redis) 
-
-    @patch('redis.Redis')
-    def test_setup_redis_connection_error(self, redis_class_mock):
-        redis_class_mock.side_effect = redis.exceptions.ConnectionError() 
-        self.assertRaises(exceptions.DbError, self.db.setup_redis) 
-
-    @patch.object(db.Db, 'setup_redis')
-    def test_setup_redis_loop(self, setup_redis_mock):
-        self.db.retries = 1
-        self.db.setup_redis_loop()
-        self.assertTrue(setup_redis_mock.called)
-
-    @patch.object(db.Db, 'setup_redis')
-    @patch.object(time, 'sleep')
-    def test_setup_redis_loop_db_error(self, time_sleep_mock, setup_redis_mock):
-        self.db.retries = 2
-        self.db.retry_wait = 0.1
-        setup_redis_mock.side_effect = exceptions.DbError() 
-        self.assertRaises(exceptions.DbError, self.db.setup_redis_loop) 
-        self.assertEqual(setup_redis_mock.call_count, 2)
-        self.assertEqual(time_sleep_mock.call_count, 2)
-    
     @patch.object(MySQLdb, 'connect')
     def test_setup_mysql(self, connect_mock):
         mock = Mock()
@@ -119,18 +93,6 @@ class DbTest(unittest.TestCase):
         r = self.db.redis_command(1, 'get', 'test_key')
         db_mem_posts_mock.get.assert_called_once_with(('test_key',))
         self.assertEqual(r, 'test')
-
-    @patch.object(db.Db, 'setup_redis_loop')
-    @patch.object(db.Db, 'db_mem')
-    def test_redis_command_connection_error(self, db_mem_mock,
-            setup_redis_loop_mock):
-        db_mem_mock.get.side_effect = redis.exceptions.ConnectionError()
-        setup_redis_loop_mock.side_effect = exceptions.DbError()
-        self.assertRaises(exceptions.DbError,
-            self.db.redis_command,
-            0, 'get', 'test_key')
-        db_mem_mock.get.assert_called_once_with(('test_key',))
-        setup_redis_loop_mock.assert_called_once()
 
     @patch.object(db.Db, 'db_mem')
     def test_redis_command_redis_error(self, db_mem_mock):

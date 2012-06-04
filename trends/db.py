@@ -18,7 +18,7 @@ class Db(object):
     db_cursor = None
     retries = 360
     retry_wait = 10 
-    cmd_retries = 3
+    cmd_retries = 10
     cmd_retry_wait = 10 
     
     def __init__(self):
@@ -27,38 +27,15 @@ class Db(object):
         self.log = logging.getLogger('db')
     
     def setup(self):
-        self.setup_redis_loop()
+        self.setup_redis()
         self.setup_mysql_loop()
          
-    def setup_redis_loop(self):
-        """Setup connection to Redis with retries."""
-        retry = 0
-        while retry < self.retries:
-            try:
-                self.setup_redis()
-                return
-            except exceptions.DbError:
-                if retry < self.retries:
-                    time.sleep(self.retry_wait)
-                retry += 1
-        self.log.error(
-            '%d retries to connect to Redis failed', self.retries)
-        raise exceptions.DbError()
-    
     def setup_redis(self):
         """Connections to Redis."""
         host = self.config.get('redis', 'host')
         port = self.config.getint('redis', 'port')
-        try:
-            self.db_mem = redis.Redis(host=host, port=port, db=0)
-            self.db_mem_posts = redis.Redis(
-                host=host, port=port, db=1)
-        except redis.exceptions.AuthenticationError:
-            self.log.error('Problem to authenticate on Redis host %s', host)
-            raise exceptions.DbError()
-        except redis.exceptions.ConnectionError:
-            self.log.error('Problem to connect to Redis host %s', host)
-            raise exceptions.DbError()
+        self.db_mem = redis.Redis(host=host, port=port, db=0)
+        self.db_mem_posts = redis.Redis(host=host, port=port, db=1)
     
     def setup_mysql_loop(self):
         """Setup connection to Redis until it succeeds"""
@@ -105,11 +82,6 @@ class Db(object):
         while retry < self.cmd_retries:
             try:
                 return getattr(dbr, cmd)(args)
-            except redis.exceptions.ConnectionError:
-                self.log.error('Redis cmd %s connection error', cmd)
-                # reconnect
-                self.setup_redis_loop()
-                retry = 0
             except redis.exceptions.RedisError:
                 self.log.error('Redis cmd %s error', cmd)
                 retry += 1
