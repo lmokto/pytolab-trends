@@ -16,3 +16,4 @@ def parse_post(data):
       post['time'] = int(s[6])
     except IndexError, ValueError:
       raise exceptions.DataError()
+    return post

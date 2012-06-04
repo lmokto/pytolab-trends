@@ -68,10 +68,10 @@ class Db(object):
             raise exceptions.DbError()
 
     def redis_cmd(self, cmd, *args):
-        return self.redis_command(0, cmd, args)
+        return self.redis_command(0, cmd, *args)
 
     def redis_cmd_db_1(self, cmd, *args):
-        return self.redis_command(1, cmd, args)
+        return self.redis_command(1, cmd, *args)
 
     def redis_command(self, db, cmd, *args):
         if db == 0:
@@ -81,7 +81,7 @@ class Db(object):
         retry = 0
         while retry < self.cmd_retries:
             try:
-                return getattr(dbr, cmd)(args)
+                return getattr(dbr, cmd)(*args)
             except redis.exceptions.RedisError:
                 self.log.error('Redis cmd %s error', cmd)
                 retry += 1
@@ -92,23 +92,29 @@ class Db(object):
                 raise exceptions.DbError()
         raise exceptions.DbError()
 
-    def get(*args):
-        return self.redis_cmd('get', args)
+    def get(self, key):
+        return self.redis_cmd('get', key)
 
-    def set(*args):
-        return self.redis_cmd('set', args)
+    def set(self, key, value):
+        return self.redis_cmd('set', key, value)
 
-    def delete(*args):
-        return self.redis_cmd('delete', args)
+    def delete(self, key):
+        return self.redis_cmd('delete', key)
 
-    def exists(*args):
-        return self.redis_cmd('exists', args)
+    def exists(self, key):
+        return self.redis_cmd('exists', key)
+
+    def incr(self, key):
+        return self.redis_cmd('incr', key)
+
+    def rpush(self, key, value):
+        return self.redis_cmd('rpush', key, value)
 
     def mysql_command(self, cmd, sql, writer, *args):
         retry = 0
         while retry < self.cmd_retries:
             try:
-                r = getattr(self.db_cursor, cmd)(sql, args)
+                r = getattr(self.db_cursor, cmd)(sql, *args)
                 if writer:
                     self.db_disk_posts.commit()
                     return r
