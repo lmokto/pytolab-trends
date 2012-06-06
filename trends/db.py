@@ -110,6 +110,9 @@ class Db(object):
     def rpush(self, key, value):
         return self.redis_cmd('rpush', key, value)
 
+    def lrange(self, key, start, stop):
+        return self.redis_cmd('lrange', key, start, stop)
+
     def mysql_command(self, cmd, sql, writer, *args):
         retry = 0
         while retry < self.cmd_retries:
