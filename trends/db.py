@@ -117,7 +117,7 @@ class Db(object):
         retry = 0
         while retry < self.cmd_retries:
             try:
-                r = getattr(self.db_cursor, cmd)(sql, *args)
+                r = getattr(self.db_cursor, cmd)(sql, args)
                 if writer:
                     self.db_disk_posts.commit()
                     return r

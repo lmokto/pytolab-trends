@@ -9,7 +9,6 @@ import datetime
 import json
 import re
 import sys
-import heapq
 
 import numpy as np
 import matplotlib.mlab as mlab
@@ -17,6 +16,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.basemap import Basemap
 import redis
 
+import constants
 import trends.config as config
 import trends.data as data
 import trends.db as db
@@ -40,7 +40,7 @@ class Stats(Daemon):
         #self.retrieve_data()
         self.compute_stats()
 
-    def retrieve_data(self):
+    def retrieve_data_old(self):
         start = 1314860400
         end = 1338534000
         sql = 'select post_id,post from tp_post where post_id > %s'\
@@ -67,21 +67,83 @@ class Stats(Daemon):
             print last_post_id
         print count
 
-    def compute_stats(self):
-        m = Basemap(projection='merc', resolution='c')
+    def retrieve_data(self):
+        start = 1314860400
+        end = 1338534000
+        for person in constants.persons:
+            last_id = 0
+            key = 'coordinates:%d' % (person[0])
+            while True:
+                # get 1000 post ids from tp_person_post for that person id
+                sql = 'select id,post_id from tp_person_post where id > %s'\
+                      ' and person_id = %s order by id limit 1000'
+                rows = self.db.mysql_command(
+                    'execute', sql, False, last_id, person[0])
+                if not rows:
+                    break
+                last_id = rows[-1][0]
+                # get posts content from tp_post
+                ids = ','.join([str(row[1]) for row in rows])
+                sql = 'select post from tp_post where post_id in (%s)' % (
+                    ids)
+                rows = self.db.mysql_command(
+                    'execute', sql, False)
+                # parse posts and store coordinates if exists
+                for row in rows:
+                    post = data.parse_post(row[0])
+                    if post['time'] >= start and post['time'] <= end:
+                        if post['coordinates']:
+                            coord = post['coordinates']['coordinates']
+                            value = '%f:%f' % (coord[0], coord[1])
+                            self.db.rpush(key, value)
+
+    def init_map(self, x1, x2, y1, y2):
+        m = Basemap(resolution='i', projection='merc', llcrnrlat=y1,
+            urcrnrlat=y2, llcrnrlon=x1, urcrnrlon=x2, lat_ts=(x1+x2)/2)
         m.drawcoastlines()
         m.drawcountries()
         m.fillcontinents(color = 'coral')
-        coordinates = self.db.lrange('coordinates', 0, -1)
+        return m
+        
+    def compute_stats(self):
+        for person in constants.persons:
+            self.generate_maps(person)
+         
+    def generate_maps(self, person):
+        name = '%s_%s' % (person[1], person[2])
+        key = 'coordinates:%d' % (person[0])
+        coordinates = self.db.lrange(key, 0, -1)
         lons = []
         lats = []
         for c in coordinates:
             lon, lat = [float(e) for e in c.split(':')]
             lons.append(lon)
             lats.append(lat)
-        x, y = m(lats, lons)
-        m.plot(x, y)
-        plt.savefig('./map.png')
+        
+        x1, x2, y1, y2 = -165., 165., -75., 75.
+        m  = self.init_map(x1, x2, y1, y2)
+        x, y = m(lons, lats)
+        m.plot(x, y, 'bo')
+        plt.savefig('./world_map_%s.png' % (name))
+
+        x1, x2, y1, y2 = -20., 40., 32., 64.
+        m  = self.init_map(x1, x2, y1, y2)
+        x, y = m(lons, lats)
+        m.plot(x, y, 'bo')
+        plt.savefig('./europe_map_%s.png' % (name))
+
+        x1, x2, y1, y2 = -5., 9., 42., 52.
+        m  = self.init_map(x1, x2, y1, y2)
+        x, y = m(lons, lats)
+        m.plot(x, y, 'bo')
+        plt.savefig('./france_map_%s.png' % (name))
+        
+        x1, x2, y1, y2 = 2., 7., 49., 52.
+        m  = self.init_map(x1, x2, y1, y2)
+        x, y = m(lons, lats)
+        m.plot(x, y, 'bo')
+        plt.savefig('./belgium_map_%s.png' % (name))
+
 
 if __name__ == "__main__":
   stats = Stats('/tmp/stats.pid')

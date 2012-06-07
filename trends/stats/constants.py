@@ -1,4 +1,7 @@
-candidates = ( 
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+persons = ( 
 (0, 'Nathalie', 'Arthaud'),
 (1, 'Martine', 'Aubry'),
 (28, 'Jean-Michel', 'Baylet'),
