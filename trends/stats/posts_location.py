@@ -108,9 +108,10 @@ class Stats(Daemon):
     def compute_stats(self):
         for person in constants.persons:
             self.generate_maps(person)
+        #self.generate_maps(constants.persons[9])
          
     def generate_maps(self, person):
-        name = '%s_%s' % (person[1], person[2])
+        name = str(person[0])
         key = 'coordinates:%d' % (person[0])
         coordinates = self.db.lrange(key, 0, -1)
         lons = []
@@ -125,24 +126,28 @@ class Stats(Daemon):
         x, y = m(lons, lats)
         m.plot(x, y, 'bo')
         plt.savefig('./world_map_%s.png' % (name))
+        plt.clf()
 
         x1, x2, y1, y2 = -20., 40., 32., 64.
         m  = self.init_map(x1, x2, y1, y2)
         x, y = m(lons, lats)
         m.plot(x, y, 'bo')
         plt.savefig('./europe_map_%s.png' % (name))
+        plt.clf()
 
         x1, x2, y1, y2 = -5., 9., 42., 52.
         m  = self.init_map(x1, x2, y1, y2)
         x, y = m(lons, lats)
         m.plot(x, y, 'bo')
         plt.savefig('./france_map_%s.png' % (name))
+        plt.clf()
         
         x1, x2, y1, y2 = 2., 7., 49., 52.
         m  = self.init_map(x1, x2, y1, y2)
         x, y = m(lons, lats)
         m.plot(x, y, 'bo')
         plt.savefig('./belgium_map_%s.png' % (name))
+        plt.clf()
 
 
 if __name__ == "__main__":
