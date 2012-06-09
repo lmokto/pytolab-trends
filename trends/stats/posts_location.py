@@ -37,6 +37,7 @@ class Stats(Daemon):
         # setup db connections
         self.db = db.Db()
         self.db.setup()
+        self.retrieve_data_old()
         #self.retrieve_data()
         self.compute_stats()
 
@@ -106,13 +107,12 @@ class Stats(Daemon):
         return m
         
     def compute_stats(self):
+        self.generate_maps('full', 'coordinates')
         for person in constants.persons:
-            self.generate_maps(person)
+            self.generate_maps(str(person[0]), 'coordinates:%d' % (person[0]))
         #self.generate_maps(constants.persons[9])
          
-    def generate_maps(self, person):
-        name = str(person[0])
-        key = 'coordinates:%d' % (person[0])
+    def generate_maps(self, name, key):
         coordinates = self.db.lrange(key, 0, -1)
         lons = []
         lats = []
