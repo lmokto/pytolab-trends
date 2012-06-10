@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 import json
 import logging
 import time
@@ -25,6 +28,7 @@ class Db(object):
         c = config.Config()
         self.config = c.cfg
         self.log = logging.getLogger('db')
+        self.dir_root = self.config.get('trends', 'root')
     
     def setup(self):
         self.setup_redis()
@@ -165,7 +169,7 @@ class Db(object):
         """
         key = 'persons'
         self.redis_cmd('delete', key)
-        with open('names.txt', 'r') as f:
+        with open('%s/names.txt' % (self.dir_root), 'r') as f:
             for line in f:
                 self.redis_cmd('rpush', key, line.rstrip('\n'))
 
