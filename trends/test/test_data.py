@@ -183,6 +183,9 @@ class DataTest(unittest.TestCase):
             data.update_words_dict(d, posts, freq_words, persons_words),
             {'worda': 2, 'wordb': 1})
 
+    def test_get_freq_words(self):
+        words = data.get_freq_words('freq_words.txt')
+        self.assertListEqual(words, ['word1', 'word2', 'word3'])
 
 if __name__ == '__main__':
     unittest.main()

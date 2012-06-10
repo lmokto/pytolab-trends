@@ -61,7 +61,7 @@ def clean_post(post):
 def update_words_dict(words_dict, posts, freq_words, persons_words):
     strs = []
     for post in posts:
-        p = clean_post(post.split(':<$>:')[3])
+        p = clean_post(post)
         strs.append(p)
     s = ' '.join(strs)
     words = s.split()
@@ -79,4 +79,9 @@ def update_words_dict(words_dict, posts, freq_words, persons_words):
             except UnicodeDecodeError, e:
                 logging.warning('Cannot process %s', wl)
     return words_dict
+
+def get_freq_words(path):
+  with open(path, 'r') as f:
+    return [l.rstrip('\n') for l in f]
+      
  
