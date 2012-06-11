@@ -65,6 +65,7 @@ def update_words_dict(words_dict, posts, freq_words, persons_words):
         strs.append(p)
     s = ' '.join(strs)
     words = s.split()
+    words = (w for w in words if len(w) > 2)
     for w in words:
         wl = w.lower()
         if wl in words_dict:
@@ -72,8 +73,7 @@ def update_words_dict(words_dict, posts, freq_words, persons_words):
         else:
             try:
                 wls = normalize(wl)
-                if (len(wl) > 2
-                        and (wls not in freq_words)
+                if ((wls not in freq_words)
                         and (wls not in persons_words)):
                     words_dict[wl] = 1
             except UnicodeDecodeError, e:

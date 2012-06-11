@@ -7,6 +7,7 @@ import logging
 import calendar
 import datetime
 import json
+import operator
 import re
 import sys
 
@@ -32,7 +33,9 @@ class Stats(Daemon):
         self.db.setup()
         self.persons = self.db.set_persons()
         self.persons = self.db.get_persons()
-        self.freq_words = data.get_freq_words()
+        self.dir_root = self.config.get('trends', 'root')
+        self.freq_words = data.get_freq_words(
+            '%s/freq_words.txt' % (self.dir_root))
         self.persons_words = data.get_persons_words(self.persons)
         self.compute_stats()
 
@@ -43,11 +46,12 @@ class Stats(Daemon):
             last_id = 0
             words_dict = {}
             while True:
+                print '%d - %d' % (person['id'], last_id)
                 # get 1000 post ids from tp_person_post for that person id
                 sql = 'select id,post_id from tp_person_post where id > %s'\
                       ' and person_id = %s order by id limit 1000'
                 rows = self.db.mysql_command(
-                    'execute', sql, False, last_id, person[0])
+                    'execute', sql, False, last_id, person['id'])
                 if not rows:
                     break
                 last_id = rows[-1][0]
@@ -58,7 +62,7 @@ class Stats(Daemon):
                 rows = self.db.mysql_command(
                     'execute', sql, False)
                 # update words dict with those posts
-                posts_data = [data.parse_post(row) for row in rows]
+                posts_data = [data.parse_post(row[0]) for row in rows]
                 posts = [p['text'] for p in posts_data 
                             if p['time'] >= start and p['time'] <= end]
                 data.update_words_dict(
@@ -66,6 +70,9 @@ class Stats(Daemon):
             sorted_dict = sorted(
                 words_dict.iteritems(), key=operator.itemgetter(1),
                 reverse=True)
+            with open('words_%d.txt' % (person['id']), 'w') as f:
+                for v in sorted_dict[:100]:
+                    f.write('%s\n' % (json.dumps(v)))
 
 if __name__ == "__main__":
   stats = Stats('/tmp/stats.pid')

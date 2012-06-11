@@ -93,10 +93,7 @@ class DataTest(unittest.TestCase):
             'worda  wordb  wordc  wordd  worde  wordf')
    
     def update_words_dict_get_posts_helper(self):
-        posts = [
-            'a:<$>:b:<$>:c:<$>:worda',
-            'a:<$>:b:<$>:c:<$>:worda',
-            'a:<$>:b:<$>:c:<$>:wordb']
+        posts = ['worda', 'worda', 'wordb']
         return posts 
 
     def test_update_words_dict(self):
@@ -119,7 +116,7 @@ class DataTest(unittest.TestCase):
 
     def test_update_words_dict_lower(self):
         posts = self.update_words_dict_get_posts_helper()
-        posts.append('a:<$>:b:<$>:c:<$>:Worda')
+        posts.append('Worda')
         d = {}
         freq_words = []
         persons_words = []
@@ -129,7 +126,7 @@ class DataTest(unittest.TestCase):
 
     def test_update_words_dict_short_word(self):
         posts = self.update_words_dict_get_posts_helper()
-        posts.append('a:<$>:b:<$>:c:<$>:ab')
+        posts.append('ab')
         d = {}
         freq_words = []
         persons_words = []
@@ -157,7 +154,7 @@ class DataTest(unittest.TestCase):
 
     def test_update_words_dict_normalize(self):
         posts = self.update_words_dict_get_posts_helper()
-        posts.append('a:<$>:b:<$>:c:<$>:wördc')
+        posts.append('wördc')
         d = {}
         freq_words = ['wordc']
         persons_words = []
@@ -175,7 +172,7 @@ class DataTest(unittest.TestCase):
     @patch.object(data, 'normalize', normalize_error)
     def test_update_words_dict_normalize_error(self):
         posts = self.update_words_dict_get_posts_helper()
-        posts.append('a:<$>:b:<$>:c:<$>:wordc')
+        posts.append('wordc')
         d = {}
         freq_words = []
         persons_words = []
