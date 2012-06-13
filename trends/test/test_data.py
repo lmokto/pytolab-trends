@@ -184,5 +184,60 @@ class DataTest(unittest.TestCase):
         words = data.get_freq_words('freq_words.txt')
         self.assertListEqual(words, ['word1', 'word2', 'word3'])
 
+    def test_get_text_language_en(self):
+        self.assertEqual(data.get_text_language('je suis at la maison'), 'en')
+
+    def test_get_text_language_fr(self):
+        self.assertEqual(data.get_text_language('je suis à la maison'), 'fr')
+
+    def test_find_text_person_words_o_minus_1_not_found(self):
+        name = 'name'
+        words = (('worda', -1), ('wordb', -1))
+        text = 'wordc name'
+        self.assertEqual(data.find_text_person_words(text, name, words), -1)
+
+    def test_find_text_person_words_o_minus_1_found(self):
+        name = 'name'
+        words = (('worda', -1), ('wordb', -1))
+        text = 'wordb namex'
+        self.assertEqual(data.find_text_person_words(text, name, words), 10)
+    
+    def test_find_text_person_words_o_minus_2_not_found(self):
+        name = 'name'
+        words = (('worda', -2), ('wordb', -2))
+        text = 'wordcname'
+        self.assertEqual(data.find_text_person_words(text, name, words), -1)
+    
+    def test_find_text_person_words_o_minus_2_found(self):
+        name = 'name'
+        words = (('worda', -2), ('wordb', -2))
+        text = 'wordaname'
+        self.assertEqual(data.find_text_person_words(text, name, words), 9)
+
+    def test_find_text_person_words_o_1_not_found(self):
+        name = 'name'
+        words = (('worda', 1), ('wordb', 1))
+        text = 'name wordc'
+        self.assertEqual(data.find_text_person_words(text, name, words), -1)
+
+    def test_find_text_person_words_o_1_found(self):
+        name = 'name'
+        words = (('worda', 1), ('wordb', 1))
+        text = 'name worda'
+        self.assertEqual(data.find_text_person_words(text, name, words), 10)
+
+    def test_find_text_person_words_o_2_not_found(self):
+        name = 'name'
+        words = (('worda', 2), ('wordb', 2))
+        text = 'namewordc'
+        self.assertEqual(data.find_text_person_words(text, name, words), -1)
+
+    def test_find_text_person_words_o_2_found(self):
+        name = 'name'
+        words = (('worda', 2), ('wordb', 2))
+        text = 'nameworda'
+        self.assertEqual(data.find_text_person_words(text, name, words), 9)
+
+
 if __name__ == '__main__':
     unittest.main()

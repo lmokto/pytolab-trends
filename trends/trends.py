@@ -82,9 +82,9 @@ class Trends(Daemon):
     # is this a post matching one or more persons?
     post_add = False
     current_time = int(time.time())
-    text_stripped = utils.strip_accents(post['text']).lower()
+    text_stripped = data.normalize(post['text']).lower()
     first_person = None
-    if utils.get_text_language(text_stripped) == 'fr':
+    if data.get_text_language(text_stripped) == 'fr':
       for person in self.persons:
         names = utils.get_names(person)
         if utils.check_names(names, text_stripped, person['words']) == 1:
