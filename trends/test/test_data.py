@@ -60,37 +60,37 @@ class DataTest(unittest.TestCase):
 
     def test_clean_post_number(self):
         post = '35'
-        self.assertEqual(data.clean_post(post), '')
+        self.assertEqual(data.clean_post(post), ' ')
 
     def test_clean_post_user(self):
         post = '@test_ù'
-        self.assertEqual(data.clean_post(post), '')
+        self.assertEqual(data.clean_post(post), ' ')
 
     def test_clean_post_url_1(self):
         post = 'http://example.com'
-        self.assertEqual(data.clean_post(post), '')
+        self.assertEqual(data.clean_post(post), ' ')
 
     def test_clean_post_url_2(self):
         post = 'https://example.com'
-        self.assertEqual(data.clean_post(post), '')
+        self.assertEqual(data.clean_post(post), ' ')
 
     def test_clean_post_url_3(self):
         post = 'https://example.com/abc'
-        self.assertEqual(data.clean_post(post), '')
+        self.assertEqual(data.clean_post(post), ' ')
 
     def test_clean_post_short_url(self):
         post = 'ab.cd/ef'
-        self.assertEqual(data.clean_post(post), '')
+        self.assertEqual(data.clean_post(post), ' ')
 
     def test_clean_post_punc(self):
-        post = '!"#$%&\'()*+,-./:;<=>?\[\\\]^_`{|}~’»«]'
-        self.assertEqual(data.clean_post(post), '')
+        post = '!'
+        self.assertEqual(data.clean_post(post), ' ')
 
     def test_clean_post(self):
         post = 'worda 35 wordb @test_ù wordc https://example.com/abc wordd'\
-               ' ab.cd/ef worde !"#$%&\'()*+,-./:;<=>?\[\\\]^_`{|}~’»«] wordf'
+               ' ab.cd/ef worde ! wordf'
         self.assertEqual(data.clean_post(post),
-            'worda  wordb  wordc  wordd  worde  wordf')
+            'worda   wordb   wordc   wordd   worde   wordf')
    
     def update_words_dict_get_posts_helper(self):
         posts = ['worda', 'worda', 'wordb']

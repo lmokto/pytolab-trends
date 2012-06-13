@@ -55,7 +55,7 @@ def clean_post(post):
     punc_re = re.compile(r'[!"#$%&\'()*+,-./:;<=>?\[\\\]^_`{|}~’»«]')
     p = post
     for r in [number_re, user_re, url_re, short_url_re, punc_re]:
-        p = re.sub(r, '', p)
+        p = re.sub(r, ' ', p)
     return p
 
 def update_words_dict(words_dict, posts, freq_words, persons_words):

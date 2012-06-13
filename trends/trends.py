@@ -37,8 +37,6 @@ class Trends(Daemon):
         self.db.set_persons()
         # get latest persons list
         self.persons = self.db.get_persons()
-        # get index where before that, the posts are in mysql 
-        self.posts_tid = int(self.db.get('posts_tid'))
         self.update_stats()
         # if nextPostId does not exist in db, set it
         key = 'nextPostId'
@@ -94,13 +92,6 @@ class Trends(Daemon):
             post_add = True
             # get next post id
             post_id = self.db.incr('nextPostId')
-            if self.process_sentiment:
-              # get text's sentiment
-              ftext = utils.sentiment_format_post_text(text_stripped,
-                self.persons)
-              sv = self.sentiment.classify_tweet(ftext)
-            else:
-              sv = 99
           # one more post for this person
           # if just entered the next hour, we initialize the stats
           # for all persons
@@ -130,24 +121,10 @@ class Trends(Daemon):
             else:
               d[str(person['id'])] = 1
             self.db.lset(key, -1, json.dumps(d))
-          # update sentiment stats and sentiment posts list for this person
-          #key = 'person:%d:sentiment' % (person['id'])
-          #neg, neu, pos = [int(e) for e in self.db.lindex(key, -1).split(':')]
-          #if sv == 8:
-          #  neg += 1
-          #elif sv == 28:
-          #  pos += 1
-          #else:
-          #  neu += 1
-          #self.db.lset(key, -1, '%d:%d:%d' % (neg, neu, pos))
-          #key = 'person:%d:%s_posts:%d' % (person['id'],
-          #  self.s_map[sv][:3], self.stats_last_update)
-          #self.db.rpush(key, post_id)
       if post_add:
         # add post to db
-        utils.set_post(int(post_id),
-          '%s:<$>:%d' % (post['msg'], sv),
-          self.db_posts, self.db_posts_disk, self.posts_tid)
+        self.db.set_post(int(post_id),
+          '%s:<$>:%d' % (post['msg'], sv))
         # add post id to current hour
         key = 'posts:%d' % (self.stats_last_update)
         self.db.rpush(key, post_id)

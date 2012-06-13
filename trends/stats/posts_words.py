@@ -37,7 +37,8 @@ class Stats(Daemon):
         self.freq_words = data.get_freq_words(
             '%s/freq_words.txt' % (self.dir_root))
         self.persons_words = data.get_persons_words(self.persons)
-        self.compute_stats()
+        #self.compute_stats()
+        self.compare_persons_words()
 
     def compute_stats(self):
         start = 1314860400
@@ -70,9 +71,32 @@ class Stats(Daemon):
             sorted_dict = sorted(
                 words_dict.iteritems(), key=operator.itemgetter(1),
                 reverse=True)
-            with open('words_%d.txt' % (person['id']), 'w') as f:
-                for v in sorted_dict[:100]:
+            with open('words_%d_full.txt' % (person['id']), 'w') as f:
+                for v in sorted_dict:
                     f.write('%s\n' % (json.dumps(v)))
+    
+    def compare_persons_words(self):
+        res = []
+        for i, person in enumerate(self.persons):
+            for person_c in self.persons[i+1:]:
+                words = []
+                # read person's file entries
+                with open('words/words_%d_full.txt' % (person['id']), 'r') as f:
+                    for line in f:
+                        word = json.loads(line.rstrip('\n'))[0]
+                        words.append(word)
+                words_c = []
+                # read person's file entries
+                with open('words/words_%d_full.txt'
+                        % (person_c['id']), 'r') as f:
+                    for line in f:
+                        word = json.loads(line.rstrip('\n'))[0]
+                        words_c.append(word)
+                same = set(words) & set(words_c)
+                res.append((person['name'], person_c['name'], len(same)))
+        sorted_res = sorted(res, key=operator.itemgetter(2), reverse=True)
+        for e in sorted_res:
+            print e
 
 if __name__ == "__main__":
   stats = Stats('/tmp/stats.pid')

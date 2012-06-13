@@ -84,14 +84,14 @@ class DbTest(unittest.TestCase):
     def test_redis_command_db_0(self, db_mem_mock):
         db_mem_mock.get.return_value = 'test'
         r = self.db.redis_command(0, 'get', 'test_key')
-        db_mem_mock.get.assert_called_once_with(('test_key',))
+        db_mem_mock.get.assert_called_once_with('test_key')
         self.assertEqual(r, 'test')
 
     @patch.object(db.Db, 'db_mem_posts')
     def test_redis_command_db_1(self, db_mem_posts_mock):
         db_mem_posts_mock.get.return_value = 'test'
         r = self.db.redis_command(1, 'get', 'test_key')
-        db_mem_posts_mock.get.assert_called_once_with(('test_key',))
+        db_mem_posts_mock.get.assert_called_once_with('test_key')
         self.assertEqual(r, 'test')
 
     @patch.object(db.Db, 'db_mem')
@@ -102,7 +102,7 @@ class DbTest(unittest.TestCase):
         self.assertRaises(exceptions.DbError,
             self.db.redis_command,
             0, 'get', 'test_key')
-        db_mem_mock.get.assert_called_with(('test_key',))
+        db_mem_mock.get.assert_called_with('test_key')
         self.assertEqual(db_mem_mock.get.call_count, 2)
 
     @patch.object(db.Db, 'db_mem')
@@ -111,7 +111,7 @@ class DbTest(unittest.TestCase):
         self.assertRaises(exceptions.DbError,
             self.db.redis_command,
             0, 'get', 'test_key')
-        db_mem_mock.get.assert_called_once_with(('test_key',))
+        db_mem_mock.get.assert_called_once_with('test_key')
     
     @patch.object(db.Db, 'db_disk_posts')
     @patch.object(db.Db, 'db_cursor')
@@ -208,6 +208,28 @@ class DbTest(unittest.TestCase):
             [call('delete', 'persons'), call('rpush', 'persons', 'test_name_1'),
              call('rpush', 'persons', 'test_name_2')]) 
         os.remove('names.txt')
-         
+    
+    @patch.object(db.Db, 'set')
+    @patch.object(db.Db, 'sql_write')
+    def test_set_post_redis(self, sql_write_mock, set_mock):
+        post_id = 2
+        value = 'test_value'
+        self.db.posts_tid = 1
+        self.db.set_post(post_id, value)
+        set_mock.assert_called_once_with('post:%d' % (post_id), value, db=1)
+        self.assertFalse(sql_write_mock.called)
+
+    @patch.object(db.Db, 'set')
+    @patch.object(db.Db, 'sql_write')
+    def test_set_post_sql(self, sql_write_mock, set_mock):
+        post_id = 1
+        value = 'test_value'
+        self.db.posts_tid = 2
+        self.db.set_post(post_id, value)
+        sql = 'insert into tp_post(post_id, post) values(%s, %s)'\
+              'on duplicate key update post=%s'
+        sql_write_mock.assert_called_once_with(sql, post_id, value, value)
+        self.assertFalse(set_mock.called)
+      
 if __name__ == '__main__':
     unittest.main()

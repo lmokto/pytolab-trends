@@ -33,6 +33,7 @@ class Db(object):
     def setup(self):
         self.setup_redis()
         self.setup_mysql_loop()
+        self.posts_tid = int(self.get('posts_tid'))
          
     def setup_redis(self):
         """Connections to Redis."""
@@ -99,8 +100,11 @@ class Db(object):
     def get(self, key):
         return self.redis_cmd('get', key)
 
-    def set(self, key, value):
-        return self.redis_cmd('set', key, value)
+    def set(self, key, value, db=0):
+        if db == 0:
+            return self.redis_cmd('set', key, value)
+        else:
+            return self.redis_cmd_db_1('set', key, value)
 
     def delete(self, key):
         return self.redis_cmd('delete', key)
@@ -116,6 +120,9 @@ class Db(object):
 
     def lrange(self, key, start, stop):
         return self.redis_cmd('lrange', key, start, stop)
+
+    def lset(self, key, index, value):
+        return self.redis_cmd('lset', key, index, value)
 
     def mysql_command(self, cmd, sql, writer, *args):
         retry = 0
@@ -141,7 +148,21 @@ class Db(object):
                 self.log.error('MySQL cmd %s does not exist', cmd)
                 raise exceptions.DbError()
         raise exceptions.DbError()
+    
+    def sql_read(sql, *args):
+        return mysql_command(self, 'execute', sql, False, args)
 
+    def sql_write(sql, *args):
+        return mysql_command(self, 'execute', sql, True, args)
+
+    def set_post(self, post_id, value):
+        if post_id >= self.posts_tid:
+            self.set('post:%d' % (post_id,), value, db=1)
+        else:
+            sql = 'insert into tp_post(post_id, post) values(%s, %s)'\
+                  'on duplicate key update post=%s'
+            self.sql_write(sql, post_id, value, value)
+             
     def get_persons(self):
         """
         Get list of persons from db
