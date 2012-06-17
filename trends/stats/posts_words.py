@@ -10,6 +10,7 @@ import json
 import operator
 import re
 import sys
+import time
 
 import trends.config as config
 import trends.data as data
@@ -37,7 +38,7 @@ class Stats(Daemon):
         self.freq_words = data.get_freq_words(
             '%s/freq_words.txt' % (self.dir_root))
         self.persons_words = data.get_persons_words(self.persons)
-        #self.compute_stats()
+        self.compute_stats()
         self.compare_persons_words()
 
     def compute_stats(self):
@@ -46,18 +47,32 @@ class Stats(Daemon):
         for person in self.persons:
             last_id = 0
             words_dict = {}
+            process = False
+            person_ids = ','.join([str(p['id']) for p in self.persons 
+                if p['id'] != person['id']])
             while True:
                 print '%d - %d' % (person['id'], last_id)
                 # get 1000 post ids from tp_person_post for that person id
-                sql = 'select id,post_id from tp_person_post where id > %s'\
+                sql = 'select id,post_id from tp_person_post where id >= %s'\
                       ' and person_id = %s order by id limit 1000'
                 rows = self.db.mysql_command(
                     'execute', sql, False, last_id, person['id'])
                 if not rows:
                     break
                 last_id = rows[-1][0]
+                post_ids_1 = set([r[1] for r in rows])
+                ids = ','.join([str(post_id) for post_id in post_ids_1])
+                # get post ids linked to only that person
+                sql = 'select post_id from tp_person_post'\
+                      ' where post_id in (%s) and person_id in (%s)'\
+                      ' order by post_id' % (ids, person_ids)
+                rows = self.db.mysql_command(
+                    'execute', sql, False)
+                post_ids_2 = set([r[0] for r in rows])
+                post_ids = post_ids_1.difference(post_ids_2)
+                print 'keep %d posts' % (len(post_ids))
                 # get posts content from tp_post
-                ids = ','.join([str(row[1]) for row in rows])
+                ids = ','.join([str(post_id) for post_id in post_ids])
                 sql = 'select post from tp_post where post_id in (%s)' % (
                     ids)
                 rows = self.db.mysql_command(
@@ -66,6 +81,10 @@ class Stats(Daemon):
                 posts_data = [data.parse_post(row[0]) for row in rows]
                 posts = [p['text'] for p in posts_data 
                             if p['time'] >= start and p['time'] <= end]
+                if process == False and posts:
+                    process = True
+                elif process == True and not posts:
+                    break
                 data.update_words_dict(
                     words_dict, posts, self.freq_words, self.persons_words)
             sorted_dict = sorted(
