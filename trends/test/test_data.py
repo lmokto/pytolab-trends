@@ -237,6 +237,45 @@ class DataTest(unittest.TestCase):
         words = (('worda', 2), ('wordb', 2))
         text = 'nameworda'
         self.assertEqual(data.find_text_person_words(text, name, words), 9)
+    
+    def test_check_names_not_found(self):
+        names = ('name_a', 'name_b')
+        text = 'name_c name_d'
+        words = (('worda', 1), ('wordb', 1))
+        self.assertEqual(data.check_names(names, text, words), 0)
+
+    def test_check_names_found_without_non_allowed_words(self):
+        names = ('name_a', 'name_b')
+        text = 'name_c name_a'
+        words = (('worda', 1), ('wordb', 1))
+        self.assertEqual(data.check_names(names, text, words), 1)
+
+    def test_check_names_found_with_non_allowed_words(self):
+        names = ('name_a', 'name_b')
+        text = 'name_c name_a worda'
+        words = (('worda', 1), ('wordb', 1))
+        self.assertEqual(data.check_names(names, text, words), 2)
+
+    def test_check_names_found_without_non_allowed_words_second(self):
+        names = ('name_a', 'name_b')
+        text = 'name_c name_a worda name_b'
+        words = (('worda', 1), ('wordb', 1))
+        self.assertEqual(data.check_names(names, text, words), 1)
+
+    def test_get_names_person_name(self):
+        person = {'name': 'test_name', 'nickname': ''}
+        expected = ['test_name']
+        self.assertListEqual(data.get_names(person), expected)
+
+    def test_get_names_person_name_with_space(self):
+        person = {'name': 'test name', 'nickname': ''}
+        expected = ['test name', 'test-name']
+        self.assertListEqual(data.get_names(person), expected)
+
+    def test_get_names_person_name_nickname(self):
+        person = {'name': 'test_name', 'nickname': 'test_nickname'}
+        expected = ['test_name', 'test_nickname']
+        self.assertListEqual(data.get_names(person), expected)
 
 
 if __name__ == '__main__':

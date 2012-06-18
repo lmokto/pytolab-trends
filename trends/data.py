@@ -127,7 +127,7 @@ def check_names(names, text, words):
       idx = text.find(n)
       g_end = 0
       while idx != -1:
-         g_end = check_text_person_words(text[g_end:], n, words)
+         g_end = find_text_person_words(text[g_end:], n, words)
          if g_end == -1:
             return 1
          else:

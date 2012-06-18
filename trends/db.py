@@ -123,6 +123,9 @@ class Db(object):
 
     def lset(self, key, index, value):
         return self.redis_cmd('lset', key, index, value)
+    
+    def lindex(self, key, index):
+        return self.redis_cmd('lindex', key, index)
 
     def mysql_command(self, cmd, sql, writer, *args):
         retry = 0
