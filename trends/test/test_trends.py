@@ -115,6 +115,111 @@ class DataTest(unittest.TestCase):
             [call(posts_count_key, -1, '2'),
              call(rel_key, -1, json.dumps({'2': 3, '3': 3}))])
 
+    @patch.object(db.Db, 'set')
+    @patch.object(db.Db, 'rpush')
+    def test_fill_stats(self, rpush_mock, set_mock):
+        periods = 2
+        self.trends.persons = [{'id': 2}, {'id': 3}]
+        self.trends.stats_last_update = 0
+        self.trends.db = db.Db()
+        self.trends.fill_stats(periods)
+        self.assertEqual(rpush_mock.call_args_list,
+            [call('person:2:posts_count', 0),
+             call('person:2:rel', json.dumps({})),
+             call('person:3:posts_count', 0),
+             call('person:3:rel', json.dumps({})),
+             call('person:2:posts_count', 0),
+             call('person:2:rel', json.dumps({})),
+             call('person:3:posts_count', 0),
+             call('person:3:rel', json.dumps({}))])
+        self.assertEqual = self.trends.stats_last_update = 7200
+        set_mock.assert_called_once_with('statsLastUpdate', 7200)
+    
+    @patch.object(db.Db, 'incr')
+    @patch.object(db.Db, 'set_post')
+    @patch.object(db.Db, 'rpush')
+    def test_process_post_names_not_found(self, rpush_mock, set_post_mock,
+            incr_mock):
+        self.trends.persons = [
+            {'name': 'name_1', 'first_name': 'first_name_1',
+             'nickname': 'nickname_1', 'id': 2, 'words': ()},
+            {'name': 'name_2', 'first_name': 'first_name_2',
+             'nickname': 'nickname_2', 'id': 2, 'words': ()}]
+        self.trends.db = db.Db()
+        self.trends.stats_last_update = 0
+        post = {'text': 'test'}
+        self.trends.process_post(post)
+        self.assertFalse(rpush_mock.called)
+        self.assertFalse(set_post_mock.called)
+        self.assertFalse(incr_mock.called)
+
+    @patch.object(db.Db, 'incr')
+    @patch.object(db.Db, 'set_post')
+    @patch.object(db.Db, 'rpush')
+    def test_process_post_text_no_fr(self, rpush_mock, set_post_mock,
+            incr_mock):
+        self.trends.db = db.Db()
+        self.trends.stats_last_update = 0
+        post = {'text': 'par the test'}
+        self.trends.process_post(post)
+        self.assertFalse(rpush_mock.called)
+        self.assertFalse(set_post_mock.called)
+        self.assertFalse(incr_mock.called)
+
+    @patch.object(trends.Trends, 'update_person_stats')
+    @patch.object(time, 'time')
+    @patch.object(db.Db, 'incr')
+    @patch.object(db.Db, 'set_post')
+    @patch.object(db.Db, 'rpush')
+    def test_process_post_names_found_1(self, rpush_mock, set_post_mock,
+            incr_mock, time_mock, update_person_stats_mock):
+        incr_mock.return_value = 3
+        time_mock.return_value = 3600
+        self.trends.persons = [
+            {'name': 'name_1', 'first_name': 'first_name_1',
+             'nickname': 'nickname_1', 'id': 2, 'words': ()},
+            {'name': 'name_2', 'first_name': 'first_name_2',
+             'nickname': 'nickname_2', 'id': 2, 'words': ()}]
+        self.trends.db = db.Db()
+        self.trends.stats_last_update = 0
+        post = {'text': 'a name_2 worda b', 'msg': 'msg'}
+        self.trends.process_post(post)
+        incr_mock.assert_called_once_with('nextPostId')
+        update_person_stats_mock.assert_called_once_with(
+            self.trends.persons[1])
+        self.assertEqual(rpush_mock.call_args_list,
+            [call('person:2:posts:0', 3),
+             call('posts:0', 3)])
+        set_post_mock.assert_called_once_with(3, 'msg:<$>:99')
+
+    @patch.object(trends.Trends, 'update_person_stats')
+    @patch.object(time, 'time')
+    @patch.object(db.Db, 'incr')
+    @patch.object(db.Db, 'set_post')
+    @patch.object(db.Db, 'rpush')
+    def test_process_post_names_found_2(self, rpush_mock, set_post_mock,
+            incr_mock, time_mock, update_person_stats_mock):
+        incr_mock.return_value = 3
+        time_mock.return_value = 3600
+        self.trends.persons = [
+            {'name': 'name_1', 'first_name': 'first_name_1',
+             'nickname': 'nickname_1', 'id': 2, 'words': ()},
+            {'name': 'name_2', 'first_name': 'first_name_2',
+             'nickname': 'nickname_2', 'id': 3, 'words': ()}]
+        self.trends.db = db.Db()
+        self.trends.stats_last_update = 0
+        post = {'text': 'a name_2 worda name_1 b', 'msg': 'msg'}
+        self.trends.process_post(post)
+        incr_mock.assert_called_once_with('nextPostId')
+        self.assertEqual(update_person_stats_mock.call_args_list,
+            [call(self.trends.persons[0]),
+             call(self.trends.persons[1])])
+        self.assertEqual(rpush_mock.call_args_list,
+            [call('person:2:posts:0', 3),
+             call('person:3:posts:0', 3),
+             call('posts:0', 3)])
+        set_post_mock.assert_called_once_with(3, 'msg:<$>:99')
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -73,14 +73,15 @@ class Trends(Daemon):
 
     def run(self):
         self.setup()
-        self.p_ttime = 0
         self.consumer.wait()
     
     def message_callback(self, message):
-        self.p_time = time.time()
+        # if just entered the next hour, we initialize the stats
+        # for all persons
+        if time.time() - self.stats_last_update >= 0:
+            self.fill_stats((diff / 3600) + 1)
         post = data.parse_post(message.body)
         self.process_post(post)
-        self.p_ttime += time.time() - self.p_time
 
     def process_post(self, post):
         """
@@ -90,27 +91,17 @@ class Trends(Daemon):
         """
         # is this a post matching one or more persons?
         post_add = False
-        current_time = int(time.time())
         text = data.normalize(post['text']).lower()
         self.first_person = None
-        if data.get_text_language(text_stripped) == 'fr':
+        if data.get_text_language(text) == 'fr':
             for person in self.persons:
                 names = data.get_names(person)
-                if utils.check_names(names, text, person['words']) == 1:
+                if data.check_names(names, text, person['words']) == 1:
+                    # one more post for this person
                     if not post_add:
                         post_add = True
                         # get next post id
                         post_id = self.db.incr('nextPostId')
-                    # one more post for this person
-                    # if just entered the next hour, we initialize the stats
-                    # for all persons
-                    diff = current_time - self.stats_last_update
-                    if diff >= 0:
-                        self.fill_stats((diff / 3600) + 1)
-                        # update time spent to process posts
-                        self.db.rpush('process_time',
-                            int(round((self.p_ttime / 3600) * 100)))
-                        self.p_ttime = 0
                     # add post to person's posts list
                     key = 'person:%d:posts:%d' % (person['id'],
                             self.stats_last_update)
@@ -119,13 +110,14 @@ class Trends(Daemon):
                     self.update_person_stats(person)
             if post_add:
                 # add post to db
+                sv = 99
                 self.db.set_post(int(post_id),
                     '%s:<$>:%d' % (post['msg'], sv))
                 # add post id to current hour
                 key = 'posts:%d' % (self.stats_last_update)
                 self.db.rpush(key, post_id)
         else:
-            logging.debug('found english word in %s', text_stripped)
+            logging.debug('found english word in %s', text)
             
     def update_person_stats(self, person):
         # update stats for this person
