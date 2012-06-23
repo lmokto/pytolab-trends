@@ -15,6 +15,7 @@ class MQ(object):
         self.producer = None
 
     def init_consumer(self, callback):
+        """Initialize a consumer to read from a queue."""
         try:
             self.consumer = consumer.Consumer(
                 self.config.get('rabbitmq', 'host'),
@@ -30,6 +31,7 @@ class MQ(object):
             raise exceptions.MQError()
 
     def init_producer(self):
+        """Initialize a producer to publish messages."""
         try:
             self.producer = producer.Producer('trends',
                 self.config.get('rabbitmq', 'host'),
@@ -61,11 +63,6 @@ class Consumer(object):
     def declare_exchange(self, exchange_name, durable=True, auto_delete=False):
         """
         Create exchange.
-
-        @param exchange_name name of the exchange
-        @param durable will the exchange survive a server restart
-        @param auto_delete should the server delete the exchange when it is
-        no longer in use
         """
         self.exchange_name = exchange_name
         self.channel.exchange_declare(exchange=self.exchange_name,
@@ -75,13 +72,6 @@ class Consumer(object):
         exclusive=False, auto_delete=False):
         """
         Create a queue and bind it to the exchange.
-
-        @param queue_name Name of the queue to create
-        @param routing_key binding key
-        @param durable will the queue survice a server restart
-        @param exclusive only 1 client can work with it
-        @param auto_delete should the server delete the exchange when it is 
-         no longer in use
         """
         self.queue_name = queue_name
         self.routing_key = routing_key
@@ -101,11 +91,6 @@ class Consumer(object):
         """
         Create a consumer and register a function to be called when
         a message is consumed
-
-        @param callback function to call
-        @param queue_name name of the queue
-        @param consumer_tag a client-generated consumer tag to establish
-               context
         """
         if hasattr(self, 'queue_name') or queue_name:
             self.consumer_tag = consumer_tag
@@ -117,8 +102,6 @@ class Consumer(object):
     def del_consumer(self, consumer_tag='callback'):
         """
         Cancel a consumer.
-
-        @param consumer_tag a client-generated consumer tag to establish context
         """
         self.channel.basic_cancel(consumer_tag)
 
@@ -127,8 +110,6 @@ class Producer(object):
     def __init__(self, exchange_name, host, userid, password):
         """
         Constructor. Initiate connection with the RabbitMQ server.
-
-        @param exchange_name name of the exchange to send messages to
         """
         self.exchange_name = exchange_name
         self.connection = amqp.Connection(
@@ -139,9 +120,6 @@ class Producer(object):
     def publish(self, message, routing_key):
         """
         Publish message to exchange using routing key
-
-        @param text message to publish
-        @param routing_key message routing key
         """
         msg = amqp.Message(message)
         msg.properties["content_type"] = "text/plain"

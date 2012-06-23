@@ -22,9 +22,6 @@ class Trends(Daemon):
     Trends main class
     """
     def __init__(self, pid_file, sent=None):
-        """
-        Constructor
-        """
         Daemon.__init__(self, pid_file)
         c = config.Config()
         self.config = c.cfg
@@ -32,11 +29,13 @@ class Trends(Daemon):
         self.stats_freq = 3600
 
     def setup(self):
+        """Setup DB connections, message queue consumer and stats."""
         self.setup_db()
         self.setup_mq()
         self.update_stats()
     
     def setup_db(self):
+        """Setup DB connections, get initial data from DB."""
         # setup db connections
         self.db = db.Db()
         self.db.setup()
@@ -50,10 +49,16 @@ class Trends(Daemon):
             self.db.set(key, 0)
 
     def setup_mq(self):
+        """Setup message queue consumer."""
         self.mq = mq.MQ()
         self.mq.init_consumer(message_callback)
 
-    def update_stats(self): 
+    def update_stats(self):
+        """Fill past persons stats.
+
+        This is in case the script stops for a while and we need to
+        catch up.
+        """
         # if last_update does not exist in db, add it
         key = 'statsLastUpdate'
         if self.db.exists(key):
@@ -72,27 +77,33 @@ class Trends(Daemon):
             self.db.set('statsFirstUpdate', self.stats_last_update)
 
     def run(self):
+        """Setup and have the consumer wait for the next message
+        to consume.
+        """
         self.setup()
         self.consumer.wait()
     
     def message_callback(self, message):
+        """This is called when a new message arrives.
+
+        Load the post attributes values and call the process method on it.
+        """
         # if just entered the next hour, we initialize the stats
         # for all persons
         if time.time() - self.stats_last_update >= 0:
             self.fill_stats((diff / 3600) + 1)
-        post = data.parse_post(message.body)
+        post = json.loads(message.body)
         self.process_post(post)
 
     def process_post(self, post):
         """
-        Process post received from the Twitter streaming API
-
-        @param post post to process
+        Process post received from the message queue.
         """
         # is this a post matching one or more persons?
         post_add = False
         text = data.normalize(post['text']).lower()
         self.first_person = None
+        # check post language
         if data.get_text_language(text) == 'fr':
             for person in self.persons:
                 names = data.get_names(person)
@@ -110,9 +121,8 @@ class Trends(Daemon):
                     self.update_person_stats(person)
             if post_add:
                 # add post to db
-                sv = 99
                 self.db.set_post(int(post_id),
-                    '%s:<$>:%d' % (post['msg'], sv))
+                    json.dumps(post))
                 # add post id to current hour
                 key = 'posts:%d' % (self.stats_last_update)
                 self.db.rpush(key, post_id)
@@ -120,7 +130,9 @@ class Trends(Daemon):
             logging.debug('found english word in %s', text)
             
     def update_person_stats(self, person):
-        # update stats for this person
+        """Increment person's post count. Update dict of relations with other
+        persons. 
+        """
         key = 'person:%d:posts_count' % (person['id'])
         v = int(self.db.lindex(key, -1))
         self.db.lset(key, -1, str(v+1))
@@ -137,6 +149,10 @@ class Trends(Daemon):
             self.db.lset(key, -1, json.dumps(d))
 
     def fill_stats(self, periods):
+        """Fill persons stats with default values.
+
+        This is used when we are catching up i.e script stopped for a while.
+        """
         for i in range(periods):
             self.stats_last_update += self.stats_freq
             for p in self.persons:

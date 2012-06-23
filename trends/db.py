@@ -31,8 +31,12 @@ class Db(object):
         self.dir_root = self.config.get('trends', 'root')
     
     def setup(self):
+        """
+        Setup the connection to Redis DB and to MySQL DB.
+        """
         self.setup_redis()
         self.setup_mysql_loop()
+        # Get marker to know if a post id is in Redis or MySQL.
         self.posts_tid = int(self.get('posts_tid'))
          
     def setup_redis(self):
@@ -58,7 +62,7 @@ class Db(object):
         raise exceptions.DbError()
 
     def setup_mysql(self):
-        # connections to MySQL
+        """Setup connections to MySQL"""
         user = self.config.get('mysql', 'user')
         password = self.config.get('mysql', 'password')
         db = self.config.get('mysql', 'db')
@@ -73,12 +77,18 @@ class Db(object):
             raise exceptions.DbError()
 
     def redis_cmd(self, cmd, *args):
+        """Redis command to DB index 0"""
         return self.redis_command(0, cmd, *args)
 
     def redis_cmd_db_1(self, cmd, *args):
+        """Redis command to DB index 1"""
         return self.redis_command(1, cmd, *args)
 
     def redis_command(self, db, cmd, *args):
+        """Command to Redis.
+
+        Try cmd_retries times.
+        """
         if db == 0:
             dbr = self.db_mem
         else:
@@ -128,6 +138,9 @@ class Db(object):
         return self.redis_cmd('lindex', key, index)
 
     def mysql_command(self, cmd, sql, writer, *args):
+        """Command to MySQL.
+        
+        Try cmd_retries times."""
         retry = 0
         while retry < self.cmd_retries:
             try:
@@ -153,12 +166,16 @@ class Db(object):
         raise exceptions.DbError()
     
     def sql_read(sql, *args):
+        """Read command to MySQL."""
         return mysql_command(self, 'execute', sql, False, args)
 
     def sql_write(sql, *args):
+        """Write command to MySQL."""
         return mysql_command(self, 'execute', sql, True, args)
 
     def set_post(self, post_id, value):
+        """Add/Update post value in Redis or MySQL based on posts id marker...
+        """
         if post_id >= self.posts_tid:
             self.set('post:%d' % (post_id,), value, db=1)
         else:

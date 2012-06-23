@@ -29,6 +29,10 @@ class Tweets(Daemon):
         self.config = c.cfg
     
     def setup(self):
+        """
+        Setup DB connections, message queue producer and the Twitter stream
+        listener.
+        """ 
         self.setup_db()
         self.setup_mq()
         self.setup_stream_listener()
@@ -63,6 +67,7 @@ class Tweets(Daemon):
 
     def stream_filter(self):
         """
+        Start listening based on a list of persons names.
         """
         # add names to stream filter
         track_list = [data.normalize(p['name']) for p in self.persons]
@@ -82,8 +87,6 @@ class Listener(tweepy.StreamListener):
     def on_status(self, status):
         """
         Callback when post is received ok
-
-        @param status post data
         """
         if status.author.lang == 'fr':
             logging.debug(status.text)
@@ -100,8 +103,6 @@ class Listener(tweepy.StreamListener):
     def on_error(self, status_code):
         """
         Callback when there is an error on the stream
-
-        @param status_code error code
         """
         logging.debug('error: %s', status_code)
 
@@ -124,8 +125,6 @@ class Listener(tweepy.StreamListener):
     def set_tweets(self, t):
         """
         Set Tweets class object
-
-        @param t tweets class object
         """
         self.tweets = t
 

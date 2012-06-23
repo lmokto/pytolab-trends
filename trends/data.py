@@ -9,6 +9,11 @@ import unicodedata
 import exceptions
 
 def parse_post(data):
+    """
+    Parse post string containing attributes values.
+    
+    Attributes values are separated by :<$>:.
+    """
     try:
         post = {}
         s = data.split(':<$>:')
@@ -36,6 +41,12 @@ def normalize(s):
             if unicodedata.category(c) != 'Mn'))
 
 def get_persons_words(persons):
+    """
+    Returns possible names for a list of persons.
+
+    Add a list containing: first name, last name and nickname, for
+    each person.
+    """
     words = []
     for person in persons:
         fn = normalize(person['first_name']).lower().split()
@@ -46,6 +57,9 @@ def get_persons_words(persons):
     return [w for w in words if len(w) > 2]
 
 def clean_post(post):
+    """
+    Remove numbers, author names, urls and punctuation.
+    """ 
     number_re = re.compile(r'[0-9]+')
     user_re = re.compile(r'@([A-Za-z0-9_ùûüÿàâæçéèêëïîôœ]+)')
     url_re = re.compile(
@@ -59,6 +73,11 @@ def clean_post(post):
     return p
 
 def update_words_dict(words_dict, posts, freq_words, persons_words):
+    """
+    Update words_dict with words contained in posts.
+
+    Do not include words part of freq_words and person_words.
+    """
     strs = []
     for post in posts:
         p = clean_post(post)
@@ -81,66 +100,78 @@ def update_words_dict(words_dict, posts, freq_words, persons_words):
     return words_dict
 
 def get_freq_words(path):
+    """
+    Read most frequent words from file located at path.
+    """
     with open(path, 'r') as f:
        return [l.rstrip('\n') for l in f]
       
 def get_text_language(text):
-   ew = (' at ', ' the ', ' are ', ' to ', ' he ', ' she ', ' in ',
+    """
+    Return text language.
+
+    Check for common english words. Return 'en' if any. Return 'fr' otherwise.
+    """ 
+    ew = (' at ', ' the ', ' are ', ' to ', ' he ', ' she ', ' in ',
          ' is ')
-   if any(n in text for n in ew):
-       return 'en'
-   else:
-       return 'fr'
+    if any(n in text for n in ew):
+        return 'en'
+    else:
+        return 'fr'
 
 def find_text_person_words(text, name, words):
-   """Check if one of the words preceeds or follows a name.
-   
-   If o == -1: check for ' word name', 'word-name'... 
-   If o == -2: check for ' wordname', ' -wordname'... 
-   If o == 1: check for 'name word', 'nameword', 'name--word'...
-   If o == 2: check for 'nameword', 'nameword ',...
-   """
-   if words:
-      for w, o in words:
-         if o == -1:
-            pattern = '(^| |\.|\"|\'|\-|#|@)%s[ \-#@\.]*%s' % (w.lower(), name)
-         elif o == -2:
-            pattern = '(^| |\.|\"|\'|\-|#|@)%s%s' % (w.lower(), name)
-         elif o == 1:
-            pattern = '%s[ \-#@\.]*%s($| |\.|\"|\'|\-)' % (name, w.lower())
-         elif o == 2:
-            pattern = '%s%s($| |\.|\"|\'|\-)' % (name, w.lower())
-         m = re.search(pattern, text)
-         if m:
-            return m.end()
-   return -1
+    """Check if one of the words preceeds or follows a name.
+
+    If o == -1: check for ' word name', 'word-name'... 
+    If o == -2: check for ' wordname', ' -wordname'... 
+    If o == 1: check for 'name word', 'nameword', 'name--word'...
+    If o == 2: check for 'nameword', 'nameword ',...
+    """
+    if words:
+        for w, o in words:
+            if o == -1:
+                pattern = '(^| |\.|\"|\'|\-|#|@)%s[ \-#@\.]*%s' % (
+                    w.lower(), name)
+            elif o == -2:
+                pattern = '(^| |\.|\"|\'|\-|#|@)%s%s' % (w.lower(), name)
+            elif o == 1:
+                pattern = '%s[ \-#@\.]*%s($| |\.|\"|\'|\-)' % (name, w.lower())
+            elif o == 2:
+                pattern = '%s%s($| |\.|\"|\'|\-)' % (name, w.lower())
+            m = re.search(pattern, text)
+            if m:
+                return m.end()
+    return -1
 
 def check_names(names, text, words):
-   """Check if person is referred in the text
-   
-   Returns 0 if name not found
-   Returns 1 if name found without non-allowed words
-   Returns 2 if name found with non-allowed words
-   """ 
-   res = 0
-   for n in names:
-      idx = text.find(n)
-      g_end = 0
-      while idx != -1:
-         g_end = find_text_person_words(text[g_end:], n, words)
-         if g_end == -1:
-            return 1
-         else:
-            res = 2
-         idx = text.find(n, idx+1)
-   return res
+    """Check if person is referred in the text
+
+    Returns 0 if name not found
+    Returns 1 if name found without non-allowed words
+    Returns 2 if name found with non-allowed words
+    """ 
+    res = 0
+    for n in names:
+        idx = text.find(n)
+        g_end = 0
+        while idx != -1:
+            g_end = find_text_person_words(text[g_end:], n, words)
+            if g_end == -1:
+                return 1
+            else:
+                res = 2
+            idx = text.find(n, idx+1)
+    return res
 
 def get_names(person):
-   name = normalize(person['name']).lower()
-   names = [name,]
-   if ' ' in name:
-      names.append('-'.join(name.split(' ')))
-   if person['nickname']:
-      names.append(normalize(person['nickname']).lower())
+    """
+    Returns list containing a person's name, nickname. 
+    """
+    name = normalize(person['name']).lower()
+    names = [name,]
+    if ' ' in name:
+        names.append('-'.join(name.split(' ')))
+    if person['nickname']:
+        names.append(normalize(person['nickname']).lower())
 
-   return names
+    return names
