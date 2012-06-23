@@ -61,7 +61,7 @@ class DbTest(unittest.TestCase):
 
     @patch.object(MySQLdb, 'connect')
     def test_setup_mysql_connect_error(self, connect_mock):
-        connect_mock.side_effect = MySQLdb.Error
+        connect_mock.side_effect = MySQLdb.Error()
         self.assertRaises(exceptions.DbError, self.db.setup_mysql)
 
     @patch.object(db.Db, 'setup_mysql')

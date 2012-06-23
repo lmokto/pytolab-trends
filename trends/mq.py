@@ -12,6 +12,7 @@ class MQ(object):
         self.log = logging.getLogger('mq')
         self.consumer = None
         self.callback = None
+        self.producer = None
 
     def init_consumer(self, callback):
         try:
@@ -26,6 +27,16 @@ class MQ(object):
             self.consumer.add_consumer(self.msg_callback)
         except amqp.AMQPException:
             self.log.error('Error configuring the consumer')
+            raise exceptions.MQError()
+
+    def init_producer(self):
+        try:
+            self.producer = producer.Producer('trends',
+                self.config.get('rabbitmq', 'host'),
+                self.config.get('rabbitmq', 'userid'),
+                self.config.get('rabbitmq', 'password'))
+        except amqp.AMQPException:
+            self.log.error('Error configuring the producer')
             raise exceptions.MQError()
 
     def msg_callback(self, message):

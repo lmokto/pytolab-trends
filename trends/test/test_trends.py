@@ -13,9 +13,9 @@ import trends.db as db
 import trends.trends as trends
 import trends.exceptions as exceptions
     
-logging.basicConfig(filename='log_test_trends.txt',level=logging.DEBUG)
+logging.basicConfig(filename='log_test_tweets.txt',level=logging.DEBUG)
 
-class DataTest(unittest.TestCase):
+class Test(unittest.TestCase):
 
     def setUp(self):
         self.trends = trends.Trends('trends.pid')
