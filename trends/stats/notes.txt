@@ -2,6 +2,9 @@ Periods: Sep 1st - June 1st : 274 days
 
 Posts: 8442728
 
+post id start: 108673
+post id end: 8561087
+
 List of candidates:
 
 Nathalie Arthaud

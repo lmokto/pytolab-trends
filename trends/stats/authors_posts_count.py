@@ -76,6 +76,8 @@ class Stats(Daemon):
             authors_data.append((author_id, author_name, c))
         sl = sorted(authors_data, key=lambda e: e[2], reverse=True)
         counts = len(posts_count)
+        print sl[:10]
+        return
         total_counts = sum(posts_count)
         c1 = 0
         c2 = 0

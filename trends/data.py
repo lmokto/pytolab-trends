@@ -1,9 +1,11 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+import datetime
 import json
 import logging
 import re
+import time
 import unicodedata
 
 import exceptions
@@ -175,3 +177,17 @@ def get_names(person):
         names.append(normalize(person['nickname']).lower())
 
     return names
+
+def get_fr_datetime_from_timestamp(ts):
+    wt = datetime.datetime(2011, 10, 30, 1, 0, 0, 0)
+    st = datetime.datetime(2012, 3, 25, 2, 0, 0, 0)
+    d = datetime.datetime.utcfromtimestamp(ts)
+    if d < wt or d > st:
+        # timestamp before start of winter time 2011 or after start
+        # of summer time 2012
+        d = datetime.datetime.fromtimestamp(ts + 7200)
+    else:
+        d = datetime.datetime.fromtimestamp(ts + 3600)
+
+    return d
+    
