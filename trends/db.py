@@ -107,8 +107,11 @@ class Db(object):
                 raise exceptions.DbError()
         raise exceptions.DbError()
 
-    def get(self, key):
-        return self.redis_cmd('get', key)
+    def get(self, key, db=0):
+        if db == 0:
+            return self.redis_cmd('get', key)
+        else:
+            return self.redis_cmd_db_1('get', key)
 
     def set(self, key, value, db=0):
         if db == 0:
@@ -182,7 +185,20 @@ class Db(object):
             sql = 'insert into tp_post(post_id, post) values(%s, %s)'\
                   'on duplicate key update post=%s'
             self.sql_write(sql, post_id, value, value)
-             
+
+    def get_post(self, post_id):
+        """Get post value from Redis or MySQL based on posts id marker...
+        """
+        if post_id >= self.posts_tid:
+            r = self.get('post:%d' % (post_id,), db=1)
+        else:
+            try:
+                sql = 'select post from tp_post where post_id=%s'
+                r = self.sql_read(sql, post_id)
+            except exceptions.DbError:
+                r = None
+        return r
+              
     def get_persons(self):
         """
         Get list of persons from db

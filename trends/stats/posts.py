@@ -34,7 +34,7 @@ class Stats(Daemon):
         # setup db connections
         self.db = db.Db()
         self.db.setup()
-        self.retrieve_data()
+        self.retrieve_data_3()
 
     def retrieve_data(self):
         start = 1314860400
@@ -93,6 +93,29 @@ class Stats(Daemon):
             ['%s.%s' % (p[1][0], p[2][0]) for p in constants.persons])
         plt.savefig('./person_posts_count.png')
 
+    def retrieve_data_3(self):
+        start = 1314860400
+        end = 1338534000
+        count = 0
+        last_id = 0
+        while True:
+            # get 1000 post ids from tp_person_post for that person id
+            sql = 'select id,post_id,post from tp_post where id > %s'\
+                  ' order by id limit 1000'
+            rows = self.db.mysql_command(
+                'execute', sql, False, last_id)
+            if not rows:
+                break
+            last_id = rows[-1][0]
+            for row in rows:
+                post = data.parse_post(row[2])
+                if post['time'] >= start and post['time'] <= end:
+                    if post['retweeted']:
+                        count += 1
+            print count
+
+        print count
+ 
 if __name__ == "__main__":
   stats = Stats('/tmp/stats.pid')
   if len(sys.argv) == 2:
