@@ -1,0 +1,68 @@
+Nathalie Arthaud
+	François Hollande - 19.2
+	Nicolas Sarkozy - 18.8
+	Marine Le Pen - 11.1
+Martine Aubry
+	François Hollande - 31.4
+	Nicolas Sarkozy - 19.5
+	Ségolène Royal - 9.2
+Jean-Michel Baylet
+	François Hollande - 21.9
+	Nicolas Sarkozy - 19.7
+	Marine Le Pen - 10.1
+François Bayrou
+	François Hollande - 24.2
+	Nicolas Sarkozy - 23.9
+	Marine Le Pen - 10.2
+Christine Boutin
+	Nicolas Sarkozy - 31.5
+	François Hollande - 24.8
+	Marine Le Pen - 11.2
+Nicolas Dupont Aignan
+	Nicolas Sarkozy - 24.1
+	François Hollande - 23.1
+	Marine Le Pen - 14.9
+François Hollande
+	Nicolas Sarkozy - 32.8
+	Marine Le Pen - 13.8
+	Jean-Luc Mélenchon - 7.6
+Nicolas Hulot
+	Nicolas Sarkozy - 31.6
+	Eva Joly - 18.3
+	François Hollande - 10.7
+Eva Joly
+	Nicolas Sarkozy - 27.4
+	Marine Le Pen - 15.2
+	François Hollande - 14.5
+Marine Le Pen
+	Nicolas Sarkozy - 33.6
+	François Hollande - 19.8
+	Jean-Luc Mélenchon - 14.0
+Jean-Luc Mélenchon
+	Nicolas Sarkozy - 23.3
+	François Hollande - 15.9
+	Marine Le Pen - 14.7
+Arnaud Montebourg
+	Nicolas Sarkozy - 25.2
+	François Hollande - 15.8
+	Ségolène Royal - 8.1
+Philippe Poutou
+	Nicolas Sarkozy - 32.0
+	François Hollande - 20.6
+	Marine Le Pen - 12.1
+Ségolène Royal
+	Nicolas Sarkozy - 32.4
+	François Hollande - 19.2
+	Marine Le Pen - 9.4
+Nicolas Sarkozy
+	François Hollande - 21.4
+	Marine Le Pen - 13.8
+	François Bayrou - 9.2
+Manuel Valls
+	François Hollande - 24.4
+	Nicolas Sarkozy - 19.1
+	Martine Aubry - 8.8
+Dominique Villepin
+	Nicolas Sarkozy - 18.9
+	François Hollande - 16.4
+	François Bayrou - 11.3

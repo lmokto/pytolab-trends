@@ -10,6 +10,7 @@ import redis.exceptions
 import MySQLdb
 
 import config
+import data
 import exceptions
 import log
 
@@ -168,13 +169,13 @@ class Db(object):
                 raise exceptions.DbError()
         raise exceptions.DbError()
     
-    def sql_read(sql, *args):
+    def sql_read(self, sql, *args):
         """Read command to MySQL."""
-        return mysql_command(self, 'execute', sql, False, args)
+        return self.mysql_command('execute', sql, False, *args)
 
-    def sql_write(sql, *args):
+    def sql_write(self, sql, *args):
         """Write command to MySQL."""
-        return mysql_command(self, 'execute', sql, True, args)
+        return self.mysql_command('execute', sql, True, *args)
 
     def set_post(self, post_id, value):
         """Add/Update post value in Redis or MySQL based on posts id marker...
@@ -230,4 +231,27 @@ class Db(object):
             for line in f:
                 self.redis_cmd('rpush', key, line.rstrip('\n'))
 
- 
+    def iter_posts(self): 
+        post_id_start = 108673
+        post_id_end = 8561087
+        last_id = post_id_start
+        while True:
+            sql = 'select post_id, post from tp_post'\
+                  ' where post_id > %s and post_id <= %s order by post_id'\
+                  ' limit 1000'
+            rows = self.sql_read(sql, last_id, post_id_end)
+            if not rows:
+                break
+            last_id = rows[-1][0]
+            r = []
+            for row in rows:
+                d = data.parse_post(row[1])
+                d['post_id'] = row[0]
+                r.append(d)
+            yield r
+
+    def get_person_ids_from_post_id(self, post_id):
+        sql = 'select person_id from tp_person_post where post_id = %s'
+        rows = self.sql_read(sql, post_id)
+        return [row[0] for row in rows]
+         
