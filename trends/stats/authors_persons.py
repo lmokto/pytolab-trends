@@ -79,6 +79,7 @@ class Stats(Daemon):
 
     def compute_stats(self):
         person_ids = [person[0] for person in constants.persons]
+        print '<ul>'
         for person_id in person_ids:
             s = []
             for p_id in person_ids:
@@ -89,10 +90,13 @@ class Stats(Daemon):
             sorted_s = sorted(s, key=operator.itemgetter(1), reverse=True)
             tt = sum([e[1] for e in sorted_s])
             name = utils.get_person_name(person_id)
-            print name
-            for p_id, v in sorted_s[:3]:
+            print '<li>%s</li>' % (name)
+            print '<ul>'
+            for p_id, v in sorted_s[:5]:
                 name = utils.get_person_name(p_id)
-                print '\t%s - %.1f' % (name, float(v) / tt * 100)
+                print '<li>%s - %.1f%%</li>' % (name, float(v) / tt * 100)
+            print '</ul>'
+        print '</ul>'
         
 if __name__ == "__main__":
   stats = Stats('/tmp/stats.pid')
