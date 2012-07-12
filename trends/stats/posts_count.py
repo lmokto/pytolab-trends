@@ -76,7 +76,7 @@ class Stats(Daemon):
             key = 'person:%d:posts_count' % (person[0])
             for i in range(n):
                 s = sum([int(e) for e in self.db.lrange(
-                    key, idx_start+offset, idx_start+offset+24)])
+                    key, idx_start+offset, idx_start+offset+23)])
                 offset += 24
                 counts.append(s)
             ax.plot_date(dates, counts, 'b-')

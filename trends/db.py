@@ -141,7 +141,7 @@ class Db(object):
     def lindex(self, key, index):
         return self.redis_cmd('lindex', key, index)
 
-    def mysql_command(self, cmd, sql, writer, *args):
+    def mysql_command(self, cmd, sql, writer, commit, *args):
         """Command to MySQL.
         
         Try cmd_retries times."""
@@ -150,7 +150,8 @@ class Db(object):
             try:
                 r = getattr(self.db_cursor, cmd)(sql, args)
                 if writer:
-                    self.db_disk_posts.commit()
+                    if commit:
+                        self.db_disk_posts.commit()
                     return r
                 else:
                     return self.db_cursor.fetchall() 
@@ -171,11 +172,19 @@ class Db(object):
     
     def sql_read(self, sql, *args):
         """Read command to MySQL."""
-        return self.mysql_command('execute', sql, False, *args)
+        return self.mysql_command('execute', sql, False, False, *args)
 
     def sql_write(self, sql, *args):
         """Write command to MySQL."""
-        return self.mysql_command('execute', sql, True, *args)
+        return self.mysql_command('execute', sql, True, True, *args)
+
+    def sql_write_no_commit(self, sql, *args):
+        """Write command to MySQL but no commit."""
+        return self.mysql_command('execute', sql, True, False, *args)
+
+    def sql_commit(self):
+        """Commit changes to disk"""
+        self.db_disk_posts.commit()
 
     def set_post(self, post_id, value):
         """Add/Update post value in Redis or MySQL based on posts id marker...

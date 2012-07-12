@@ -191,4 +191,12 @@ def get_fr_datetime_from_timestamp(ts):
         d = datetime.datetime.fromtimestamp(ts + 3600)
 
     return d
-    
+   
+def get_str_from_timestamp(ts, short=False):
+    d = get_fr_datetime_from_timestamp(ts)
+    if short:
+        s = d.strftime('%m-%d')
+    else:
+        s = d.strftime('%Y-%m-%d %H:%M:%S')
+    return s
+
