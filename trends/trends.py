@@ -1,31 +1,46 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import ConfigParser
 import time
 import redis
-import logging
 import calendar
 import datetime
 import json
 import re
 import sys
-
 import config
 import data
 import db
 from daemon import Daemon
 import mq
+import logging
+
+logger = logging.getLogger('trends')
+logger.setLevel(logging.DEBUG)
+
+# create console handler and set level to debug
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+
+# create formatter
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+# add formatter to ch
+ch.setFormatter(formatter)
+
+# add ch to logger
+logger.addHandler(ch)
 
 class Trends(Daemon):
     """
     Trends main class
     """
     def __init__(self, pid_file, sent=None):
-        Daemon.__init__(self, pid_file)
+        #Daemon.__init__(self, pid_file)
         c = config.Config()
         self.config = c.cfg
-        self.log = logging.getLogger('trends')
+#        self.log = logging.getLogger('trends')
         self.stats_freq = 3600
 
     def setup(self):
@@ -51,7 +66,7 @@ class Trends(Daemon):
     def setup_mq(self):
         """Setup message queue consumer."""
         self.mq = mq.MQ()
-        self.mq.init_consumer(message_callback)
+        self.mq.init_consumer(self.message_callback)
 
     def update_stats(self):
         """Fill past persons stats.
@@ -81,7 +96,7 @@ class Trends(Daemon):
         to consume.
         """
         self.setup()
-        self.consumer.wait()
+        self.mq.wait()
     
     def message_callback(self, message):
         """This is called when a new message arrives.
@@ -90,7 +105,8 @@ class Trends(Daemon):
         """
         # if just entered the next hour, we initialize the stats
         # for all persons
-        if time.time() - self.stats_last_update >= 0:
+        diff = int(time.time()) - self.stats_last_update
+        if diff >= 0:
             self.fill_stats((diff / 3600) + 1)
         post = json.loads(message.body)
         self.process_post(post)
@@ -104,7 +120,7 @@ class Trends(Daemon):
         text = data.normalize(post['text']).lower()
         self.first_person = None
         # check post language
-        if data.get_text_language(text) == 'fr':
+        if data.get_text_language(text) == 'es':
             for person in self.persons:
                 names = data.get_names(person)
                 if data.check_names(names, text, person['words']) == 1:
@@ -114,20 +130,18 @@ class Trends(Daemon):
                         # get next post id
                         post_id = self.db.incr('nextPostId')
                     # add post to person's posts list
-                    key = 'person:%d:posts:%d' % (person['id'],
-                            self.stats_last_update)
+                    key = 'person:%d:posts:%d' % (person['id'], self.stats_last_update)
                     self.db.rpush(key, post_id)
                     # update stats for this person
                     self.update_person_stats(person)
             if post_add:
                 # add post to db
-                self.db.set_post(int(post_id),
-                    json.dumps(post))
+                self.db.set_post(int(post_id), json.dumps(post))
                 # add post id to current hour
                 key = 'posts:%d' % (self.stats_last_update)
                 self.db.rpush(key, post_id)
         else:
-            logging.debug('found english word in %s', text)
+            logger.debug('found english word in %s', text)
             
     def update_person_stats(self, person):
         """Increment person's post count. Update dict of relations with other
@@ -164,20 +178,19 @@ class Trends(Daemon):
         self.db.set(key, self.stats_last_update)
 
 if __name__ == "__main__":
-    if len(sys.argv) == 2 and sys.argv[1] == 'test':
-        trends = Trends('/tmp/trends.pid', test_trends.Sentiment)
-    else:
-        trends = Trends('/tmp/trends.pid')
-    if len(sys.argv) == 2 and sys.argv[1] != 'test':
-        if 'start' == sys.argv[1]:
-            trends.start()
-        elif 'stop' == sys.argv[1]:
-            trends.stop()
-        elif 'restart' == sys.argv[1]:
-            trends.restart()
-        else:
-            print "Unknown command"
-            sys.exit(2)
-        sys.exit(0)
-    else:
-        trends.run()
+    #
+    trends = Trends('/home/delkar/Desktop/pytolabtrends/trends/trends.pid')
+    trends.run()
+    # if len(sys.argv) == 2:
+    #     if 'start' == sys.argv[1]:
+    #         trends.start()
+    #     elif 'stop' == sys.argv[1]:
+    #         trends.stop()
+    #     elif 'restart' == sys.argv[1]:
+    #         trends.restart()
+    #     else:
+    #         print "Unknown command"
+    #         sys.exit(2)
+    #     sys.exit(0)
+    # else:
+    #     trends.run()

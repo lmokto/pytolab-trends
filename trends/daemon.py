@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 import sys, os, time, atexit
 from signal import SIGTERM 
@@ -10,6 +11,7 @@ class Daemon:
 	Usage: subclass the Daemon class and override the run() method
 	"""
 	def __init__(self, pidfile, stdin='/dev/null', stdout='/dev/null', stderr='/dev/null'):
+		print "building"
 		self.stdin = stdin
 		self.stdout = stdout
 		self.stderr = stderr
@@ -26,7 +28,8 @@ class Daemon:
 			if pid > 0:
 				# exit first parent
 				sys.exit(0) 
-		except OSError, e: 
+		except OSError, e:
+			print e
 			sys.stderr.write("fork #1 failed: %d (%s)\n" % (e.errno, e.strerror))
 			sys.exit(1)
 	
@@ -37,11 +40,12 @@ class Daemon:
 	
 		# do second fork
 		try: 
-			pid = os.fork() 
-		        if pid > 0:
+			pid = os.fork()
+			if pid > 0:
 				# exit from second parent
 				sys.exit(0) 
-		except OSError, e: 
+		except OSError, e:
+			print e
 			sys.stderr.write("fork #2 failed: %d (%s)\n" % (e.errno, e.strerror))
 			sys.exit(1)
 	
@@ -69,7 +73,7 @@ class Daemon:
 		"""
 		# Check for a pidfile to see if the daemon already runs
 		try:
-			pf = file(self.pidfile,'r')
+			pf = file(self.pidfile, 'r')
 			pid = int(pf.read().strip())
 			pf.close()
 		except IOError:
@@ -104,7 +108,7 @@ class Daemon:
 		# Try killing the daemon process	
 		try:
 			while 1:
-				os.kill(pid, SIGTERM)
+				os.kill(int(pid), SIGTERM)
 				time.sleep(0.1)
 		except OSError, err:
 			err = str(err)
@@ -127,3 +131,27 @@ class Daemon:
 		You should override this method when you subclass Daemon. It will be called after the process has been
 		daemonized by start() or restart().
 		"""
+
+class MyDaemon(Daemon):
+	def run(self):
+		while True:
+			time.sleep(1)
+
+if __name__ == "__main__":
+    daemon = MyDaemon('/tmp/daemon-example.pid')
+    if len(sys.argv) == 2:
+        if 'start' == sys.argv[1]:
+            daemon.start()
+        elif 'stop' == sys.argv[1]:
+            daemon.stop()
+        elif 'restart' == sys.argv[1]:
+            daemon.restart()
+        else:
+            print "Unknown command"
+            sys.exit(2)
+        sys.exit(0)
+    else:
+		print "usage: %s start|stop|restart" % sys.argv[0]
+		sys.exit(2)
+
+	

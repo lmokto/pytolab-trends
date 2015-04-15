@@ -1,1 +1,4 @@
 trends.cfg
+*.pyc
+env/
+dump.rdb

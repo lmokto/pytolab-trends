@@ -1,18 +1,35 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
+#http://stackoverflow.com/questions/1511661/virtualenv-mysql-python-pip-anyone-know-how
 
 import json
 import logging
 import time
-
 import redis
 import redis.exceptions
 import MySQLdb
-
 import config
 import data
-import exceptions
+import ex
 import log
+import logging
+
+logger = logging.getLogger('db')
+logger.setLevel(logging.DEBUG)
+
+# create console handler and set level to debug
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+
+# create formatter
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+# add formatter to ch
+ch.setFormatter(formatter)
+
+# add ch to logger
+logger.addHandler(ch)
 
 class Db(object):
 
@@ -28,7 +45,7 @@ class Db(object):
     def __init__(self):
         c = config.Config()
         self.config = c.cfg
-        self.log = logging.getLogger('db')
+#        self.log = logging.getLogger('db')
         self.dir_root = self.config.get('trends', 'root')
     
     def setup(self):
@@ -38,7 +55,7 @@ class Db(object):
         self.setup_redis()
         self.setup_mysql_loop()
         # Get marker to know if a post id is in Redis or MySQL.
-        self.posts_tid = int(self.get('posts_tid'))
+        self.posts_tid = self.get('posts_tid')
          
     def setup_redis(self):
         """Connections to Redis."""
@@ -54,13 +71,14 @@ class Db(object):
             try:
                 self.setup_mysql()
                 return
-            except exceptions.DbError:
+            except ex.DbError:
                 if retry < self.retries:
                     time.sleep(self.retry_wait)
                 retry += 1
-        self.log.error(
-            '%d retries to connect to MySQL failed', self.retries)
-        raise exceptions.DbError()
+                logger.error("intentando retriy %s", retry)
+        #self.log.error('%d retries to connect to MySQL failed', self.retries)
+        logger.error('%d retries to connect to MySQL failed', self.retries)
+        raise ex.DbError()
 
     def setup_mysql(self):
         """Setup connections to MySQL"""
@@ -74,8 +92,9 @@ class Db(object):
                 use_unicode=True, charset='utf8')
             self.db_cursor = self.db_disk_posts.cursor()
         except MySQLdb.Error:
-            self.log.error('Problem to connect to MySQL host %s', host)
-            raise exceptions.DbError()
+            #self.log.error('Problem to connect to MySQL host %s', host)
+            logger.error('Problem to connect to MySQL host %s', host)
+            raise ex.DbError()
 
     def redis_cmd(self, cmd, *args):
         """Redis command to DB index 0"""
@@ -99,14 +118,16 @@ class Db(object):
             try:
                 return getattr(dbr, cmd)(*args)
             except redis.exceptions.RedisError:
-                self.log.error('Redis cmd %s error', cmd)
+                #self.log.error('Redis cmd %s error', cmd)
+                logger.error('Redis cmd %s error', cmd)
                 retry += 1
                 if retry <= self.cmd_retries:
                     time.sleep(self.cmd_retry_wait)
             except AttributeError:
-                self.log.error('Redis cmd %s does not exist', cmd)
-                raise exceptions.DbError()
-        raise exceptions.DbError()
+                #self.log.error('Redis cmd %s does not exist', cmd)
+                logger.error('Redis cmd %s does not exist', cmd)
+                raise ex.DbError()
+        raise ex.DbError()
 
     def get(self, key, db=0):
         if db == 0:
@@ -148,6 +169,7 @@ class Db(object):
         retry = 0
         while retry < self.cmd_retries:
             try:
+                print args
                 r = getattr(self.db_cursor, cmd)(sql, args)
                 if writer:
                     if commit:
@@ -156,19 +178,22 @@ class Db(object):
                 else:
                     return self.db_cursor.fetchall() 
             except (MySQLdb.OperationalError, MySQLdb.InternalError):
-                self.log.error('MySQL cmd %s DB error', cmd)
+                #self.log.error('MySQL cmd %s DB error', cmd)
+                logger.error('MySQL cmd %s DB error', cmd)
                 # reconnect
                 self.setup_mysql_loop()
                 retry = 0
             except MySQLdb.Error:
-                self.log.error('MySQL cmd %s sql %s failed', cmd, sql)
+                #self.log.error('MySQL cmd %s sql %s failed', cmd, sql)
+                logger.error('MySQL cmd %s sql %s failed', cmd, sql)
                 retry += 1
                 if retry <= self.cmd_retries:
                     time.sleep(self.cmd_retry_wait)
             except AttributeError:
-                self.log.error('MySQL cmd %s does not exist', cmd)
-                raise exceptions.DbError()
-        raise exceptions.DbError()
+                logger.error('MySQL cmd %s does not exist', cmd)
+                #self.log.error('MySQL cmd %s does not exist', cmd)
+                raise ex.DbError()
+        raise ex.DbError()
     
     def sql_read(self, sql, *args):
         """Read command to MySQL."""
@@ -192,8 +217,7 @@ class Db(object):
         if post_id >= self.posts_tid:
             self.set('post:%d' % (post_id,), value, db=1)
         else:
-            sql = 'insert into tp_post(post_id, post) values(%s, %s)'\
-                  'on duplicate key update post=%s'
+            sql = 'insert into tp_post(post_id, post) values(%s, %s) on duplicate key update post=%s'
             self.sql_write(sql, post_id, value, value)
 
     def get_post(self, post_id):
@@ -205,7 +229,7 @@ class Db(object):
             try:
                 sql = 'select post from tp_post where post_id=%s'
                 r = self.sql_read(sql, post_id)
-            except exceptions.DbError:
+            except ex.DbError:
                 r = None
         return r
               
@@ -263,4 +287,3 @@ class Db(object):
         sql = 'select person_id from tp_person_post where post_id = %s'
         rows = self.sql_read(sql, post_id)
         return [row[0] for row in rows]
-         

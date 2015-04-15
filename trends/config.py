@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import ConfigParser
 
 class Config(object):
@@ -10,4 +13,3 @@ class Config(object):
         """Return config object from config file"""
         self.cfg = ConfigParser.ConfigParser()
         self.cfg.read('trends.cfg')
-

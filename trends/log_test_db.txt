@@ -1,0 +1,152 @@
+.FEEEFE..EE..FE.EF
+======================================================================
+ERROR: test_mysql_command_attribute_error (__main__.DbTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/local/lib/python2.7/dist-packages/mock.py", line 1201, in patched
+    return func(*args, **keywargs)
+  File "test_db.py", line 179, in test_mysql_command_attribute_error
+    self.assertRaises(exceptions.DbError,
+AttributeError: 'module' object has no attribute 'DbError'
+
+======================================================================
+ERROR: test_mysql_command_internal_error (__main__.DbTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/local/lib/python2.7/dist-packages/mock.py", line 1201, in patched
+    return func(*args, **keywargs)
+  File "test_db.py", line 169, in test_mysql_command_internal_error
+    self.assertRaises(exceptions.DbError,
+AttributeError: 'module' object has no attribute 'DbError'
+
+======================================================================
+ERROR: test_mysql_command_operational_error (__main__.DbTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/local/lib/python2.7/dist-packages/mock.py", line 1201, in patched
+    return func(*args, **keywargs)
+  File "test_db.py", line 145, in test_mysql_command_operational_error
+    setup_mysql_loop_mock.side_effect = exceptions.DbError()
+AttributeError: 'module' object has no attribute 'DbError'
+
+======================================================================
+ERROR: test_redis_command_attribute_error (__main__.DbTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/local/lib/python2.7/dist-packages/mock.py", line 1201, in patched
+    return func(*args, **keywargs)
+  File "test_db.py", line 114, in test_redis_command_attribute_error
+    self.assertRaises(exceptions.DbError,
+AttributeError: 'module' object has no attribute 'DbError'
+
+======================================================================
+ERROR: test_redis_command_redis_error (__main__.DbTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/local/lib/python2.7/dist-packages/mock.py", line 1201, in patched
+    return func(*args, **keywargs)
+  File "test_db.py", line 105, in test_redis_command_redis_error
+    self.assertRaises(exceptions.DbError,
+AttributeError: 'module' object has no attribute 'DbError'
+
+======================================================================
+ERROR: test_set_persons (__main__.DbTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/local/lib/python2.7/dist-packages/mock.py", line 1201, in patched
+    return func(*args, **keywargs)
+  File "test_db.py", line 209, in test_set_persons
+    self.db.set_persons()
+  File "/home/delkar/Desktop/pytolabtrends/trends/db.py", line 240, in set_persons
+    with open('%s/names.txt' % (self.dir_root), 'r') as f:
+IOError: [Errno 2] No such file or directory: '/home/delkar/Desktop/pytolab-trends/test/names.txt'
+
+======================================================================
+ERROR: test_setup_mysql_connect_error (__main__.DbTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/local/lib/python2.7/dist-packages/mock.py", line 1201, in patched
+    return func(*args, **keywargs)
+  File "test_db.py", line 68, in test_setup_mysql_connect_error
+    self.assertRaises(exceptions.DbError, self.db.setup_mysql)
+AttributeError: 'module' object has no attribute 'DbError'
+
+======================================================================
+ERROR: test_setup_mysql_loop_db_error (__main__.DbTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/local/lib/python2.7/dist-packages/mock.py", line 1201, in patched
+    return func(*args, **keywargs)
+  File "test_db.py", line 81, in test_setup_mysql_loop_db_error
+    setup_mysql_mock.side_effect = exceptions.DbError()
+AttributeError: 'module' object has no attribute 'DbError'
+
+======================================================================
+FAIL: test_mysql_command (__main__.DbTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/local/lib/python2.7/dist-packages/mock.py", line 1201, in patched
+    return func(*args, **keywargs)
+  File "test_db.py", line 125, in test_mysql_command
+    'test_sql', ('test_arg',))
+  File "/usr/local/lib/python2.7/dist-packages/mock.py", line 846, in assert_called_once_with
+    return self.assert_called_with(*args, **kwargs)
+  File "/usr/local/lib/python2.7/dist-packages/mock.py", line 835, in assert_called_with
+    raise AssertionError(msg)
+AssertionError: Expected call: execute('test_sql', ('test_arg',))
+Actual call: execute('test_sql', ())
+
+======================================================================
+FAIL: test_mysql_command_writer (__main__.DbTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/local/lib/python2.7/dist-packages/mock.py", line 1201, in patched
+    return func(*args, **keywargs)
+  File "test_db.py", line 136, in test_mysql_command_writer
+    'test_sql', ('test_arg',))
+  File "/usr/local/lib/python2.7/dist-packages/mock.py", line 846, in assert_called_once_with
+    return self.assert_called_with(*args, **kwargs)
+  File "/usr/local/lib/python2.7/dist-packages/mock.py", line 835, in assert_called_with
+    raise AssertionError(msg)
+AssertionError: Expected call: execute('test_sql', ('test_arg',))
+Actual call: execute('test_sql', ())
+
+======================================================================
+FAIL: test_setup_mysql (__main__.DbTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/local/lib/python2.7/dist-packages/mock.py", line 1201, in patched
+    return func(*args, **keywargs)
+  File "test_db.py", line 60, in test_setup_mysql
+    use_unicode=True)
+  File "/usr/local/lib/python2.7/dist-packages/mock.py", line 846, in assert_called_once_with
+    return self.assert_called_with(*args, **kwargs)
+  File "/usr/local/lib/python2.7/dist-packages/mock.py", line 835, in assert_called_with
+    raise AssertionError(msg)
+AssertionError: Expected call: connect(use_unicode=True, passwd='test_mysql_password', charset='utf8', db='test_mysql_db', host='test_mysql_host', user='test_mysql_user')
+Actual call: connect(use_unicode=True, passwd='', charset='utf8', db='test_mysql_db', host='127.0.0.1', user='root')
+
+======================================================================
+FAIL: test_setup_redis (__main__.DbTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/local/lib/python2.7/dist-packages/mock.py", line 1201, in patched
+    return func(*args, **keywargs)
+  File "test_db.py", line 45, in test_setup_redis
+    self.assertListEqual(call_args_list, expected)
+AssertionError: Lists differ: [call(host='127.0.0.1', db=0, port=6379),
+ call(host=[25 chars]379)] != [call(host='test_redis_host', db=0, port=1), call(hos[30 chars]t=1)]
+
+First differing element 0:
+call(host='127.0.0.1', db=0, port=6379)
+call(host='test_redis_host', db=0, port=1)
+
+- [call(host='127.0.0.1', db=0, port=6379),
+-  call(host='127.0.0.1', db=1, port=6379)]
++ [call(host='test_redis_host', db=0, port=1),
++  call(host='test_redis_host', db=1, port=1)]
+
+----------------------------------------------------------------------
+Ran 18 tests in 0.219s
+
+FAILED (failures=4, errors=8)

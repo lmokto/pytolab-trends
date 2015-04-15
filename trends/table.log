@@ -1,0 +1,11 @@
+CREATE TABLE tp_post (
+         id INT,
+         post_id VARCHAR(100),
+         post VARCHAR(254)
+       );
+
+CREATE TABLE tp_person_post (
+	id
+	person_id
+	post_id
+)

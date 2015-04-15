@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/home/delkar/Desktop/pytolabtrends/env/local/lib/python2.7/site-packages/pudb-2015.2-py2.7.egg/pudb/__init__.py", line 77, in runscript
+    dbg._runscript(mainpyfile)
+  File "/home/delkar/Desktop/pytolabtrends/env/local/lib/python2.7/site-packages/pudb-2015.2-py2.7.egg/pudb/debugger.py", line 371, in _runscript
+    self.run(statement, globals=globals_, locals=locals_)
+  File "/usr/lib/python2.7/bdb.py", line 400, in run
+    exec cmd in globals, locals
+  File "<string>", line 1, in <module>
+  File "trends.py", line 17, in <module>
+    from daemon import Daemon
+  File "daemon.py", line 43
+    if pid > 0:
+     ^
+SyntaxError: invalid syntax

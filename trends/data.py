@@ -1,5 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 
 import datetime
 import json
@@ -120,7 +121,7 @@ def get_text_language(text):
     if any(n in text for n in ew):
         return 'en'
     else:
-        return 'fr'
+        return 'es'
 
 def find_text_person_words(text, name, words):
     """Check if one of the words preceeds or follows a name.
@@ -199,4 +200,3 @@ def get_str_from_timestamp(ts, short=False):
     else:
         s = d.strftime('%Y-%m-%d %H:%M:%S')
     return s
-

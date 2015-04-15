@@ -1,18 +1,32 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import logging
 import time
 import json
 import sys
-
 import tweepy
-
 import config
 import data
 import db
 from daemon import Daemon
 import mq
+import logging
+
+logger = logging.getLogger('trends')
+logger.setLevel(logging.DEBUG)
+
+# create console handler and set level to debug
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+
+# create formatter
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+# add formatter to ch
+ch.setFormatter(formatter)
+
+# add ch to logger
+logger.addHandler(ch)
 
 class Tweets(Daemon):
     """
@@ -54,9 +68,12 @@ class Tweets(Daemon):
         """
         listener = Listener()
         listener.set_tweets(self)
+        auth = tweepy.OAuthHandler(self.config.get('twitter', 'consumer_key'), \
+            self.config.get('twitter', 'consumer_secret'))
+        auth.set_access_token(self.config.get('twitter', 'access_token'), \
+            self.config.get('twitter', 'access_token_secret'))
         self.stream = tweepy.Stream(
-            self.config.get('twitter', 'userid'),
-            self.config.get('twitter', 'password'),
+            auth,
             listener,
             timeout=3600
         )
@@ -71,12 +88,12 @@ class Tweets(Daemon):
         """
         # add names to stream filter
         track_list = [data.normalize(p['name']) for p in self.persons]
-        logging.debug('track_list: %s', track_list)
+        logger.debug('track_list: %s', track_list)
         while True:
             try:
                 self.stream.filter(track=track_list)
             except Exception:
-                logging.exception('stream filter')
+                logger.error('stream filter')
                 time.sleep(10)
 
 
@@ -88,8 +105,8 @@ class Listener(tweepy.StreamListener):
         """
         Callback when post is received ok
         """
-        if status.author.lang == 'fr':
-            logging.debug(status.text)
+        if status.author.lang == 'es':
+            #logger.debug(status.text)
             message = {'author_name': status.author.screen_name,
                        'author_id': status.author.id,
                        'id': status.id,
@@ -97,29 +114,30 @@ class Listener(tweepy.StreamListener):
                        'retweeted': status.retweeted,
                        'coordinates': status.coordinates,
                        'time': int(time.time())}
-            logging.debug(message)
-            self.tweets.producer.publish(json.dumps(message), 'posts')
+            #print message
+            #logger.debug(message)
+            self.tweets.mq.producer.publish(json.dumps(message), 'posts')
     
     def on_error(self, status_code):
         """
         Callback when there is an error on the stream
         """
-        logging.debug('error: %s', status_code)
+        logger.debug('error: %s', status_code)
 
     def on_timeout(self):
         """
         Callback when there is a timeout on the stream
         """
-        logging.debug('timeout')
+        logger.debug('timeout')
         
     def on_limit(self, track):
         """Called when a limitation notice arrives"""
-        logging.debug('limit: %s', track)
+        logger.debug('limit: %s', track)
         return
 
     def on_delete(self, status_id, user_id):
          """Called when a delete notice arrives for a status"""
-         logging.debug('delete: %s - %s', status_id, user_id)
+         logger.debug('delete: %s - %s', status_id, user_id)
          return
 
     def set_tweets(self, t):
@@ -129,18 +147,19 @@ class Listener(tweepy.StreamListener):
         self.tweets = t
 
 if __name__ == "__main__":
-    daemon = Tweets('/tmp/tweets.pid')
-    if len(sys.argv) == 2:
-        if 'start' == sys.argv[1]:
-            daemon.start()
-        elif 'stop' == sys.argv[1]:
-            daemon.stop()
-        elif 'restart' == sys.argv[1]:
-            daemon.restart()
-        else:
-            print "Unknown command"
-            sys.exit(2)
-        sys.exit(0)
-    else:
-        print "usage: %s start|stop|restart" % sys.argv[0]
-        sys.exit(2)
+    daemon = Tweets('/home/delkar/Desktop/pytolabtrends/trends/tweets.pid')
+    daemon.run()
+    # if len(sys.argv) == 2:
+    #     if 'start' == sys.argv[1]:
+    #         daemon.start()
+    #     elif 'stop' == sys.argv[1]:
+    #         daemon.stop()
+    #     elif 'restart' == sys.argv[1]:
+    #         daemon.restart()
+    #     else:
+    #         print "Unknown command"
+    #         sys.exit(2)
+    #     sys.exit(0)
+    # else:
+    #     print "usage: %s start|stop|restart" % sys.argv[0]
+    #     sys.exit(2)

@@ -1,0 +1,21 @@
+Traceback (most recent call last):
+  File "/home/delkar/Desktop/pytolabtrends/env/local/lib/python2.7/site-packages/pudb-2015.2-py2.7.egg/pudb/__init__.py", line 77, in runscript
+    dbg._runscript(mainpyfile)
+  File "/home/delkar/Desktop/pytolabtrends/env/local/lib/python2.7/site-packages/pudb-2015.2-py2.7.egg/pudb/debugger.py", line 371, in _runscript
+    self.run(statement, globals=globals_, locals=locals_)
+  File "/usr/lib/python2.7/bdb.py", line 400, in run
+    exec cmd in globals, locals
+  File "<string>", line 1, in <module>
+  File "trends.py", line 169, in <module>
+    trends.run()
+  File "trends.py", line 84, in run
+    self.mq.wait()
+  File "mq.py", line 50, in wait
+    self.consumer.channel.wait()
+  File "/home/delkar/Desktop/pytolabtrends/env/local/lib/python2.7/site-packages/amqplib/client_0_8/abstract_channel.py", line 95, in wait
+    self.channel_id, allowed_methods)
+  File "/home/delkar/Desktop/pytolabtrends/env/local/lib/python2.7/site-packages/amqplib/client_0_8/connection.py", line 202, in _wait_method
+    self.method_reader.read_method()
+  File "/home/delkar/Desktop/pytolabtrends/env/local/lib/python2.7/site-packages/amqplib/client_0_8/method_framing.py", line 221, in read_method
+    raise m
+error: [Errno 4] Interrupted system call
